@@ -305,6 +305,35 @@ export type Database = {
         }
         Relationships: []
       }
+      stickers: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stickers_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
