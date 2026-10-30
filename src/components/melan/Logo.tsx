@@ -12,7 +12,7 @@ export function MelanLogo({ size = "md" }: { size?: "md" | "lg" }) {
   const big = size === "lg";
   return (
     <div className="relative inline-flex items-center gap-1.5 select-none">
-      <Bat className={`bat-flap absolute -top-3 -left-4 text-bar ${big ? "w-8" : "w-5"}`} />
+      <Bat className={`bat-flap absolute -top-3 -left-4 text-foreground/60 ${big ? "w-8" : "w-5"}`} />
       <img
         src={logo.url}
         alt=""
@@ -21,7 +21,7 @@ export function MelanLogo({ size = "md" }: { size?: "md" | "lg" }) {
       <span className={`font-display font-extrabold tracking-tight text-foreground ${big ? "text-5xl" : "text-2xl"}`}>
         Mel<span className="text-melon">a</span>n
       </span>
-      <Bat className={`bat-flap absolute -top-2 -right-5 text-bar [animation-delay:0.6s] ${big ? "w-7" : "w-4"}`} />
+      <Bat className={`bat-flap absolute -top-2 -right-5 text-foreground/60 [animation-delay:0.6s] ${big ? "w-7" : "w-4"}`} />
     </div>
   );
 }
