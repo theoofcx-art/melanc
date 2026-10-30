@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 function Admin() {
-  const { user, isAdmin } = useMe();
+  const { user, loading, isAdmin } = useMe();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"users" | "posts">("users");
   const del = useServerFn(adminDeleteUser);
@@ -28,16 +28,16 @@ function Admin() {
   });
   const users = useQuery({
     queryKey: ["admin-users"],
-    enabled: isAdmin,
+    enabled: !!roleCheck.data,
     queryFn: async () => (await supabase.from("profiles").select("*").order("created_at", { ascending: false })).data ?? [],
   });
   const posts = useQuery({
     queryKey: ["posts", "admin"],
-    enabled: isAdmin && tab === "posts",
+    enabled: !!roleCheck.data && tab === "posts",
     queryFn: async () => (await supabase.from("posts").select("id,content,kind,created_at,author:profiles!posts_author_id_fkey(username)").order("created_at", { ascending: false }).limit(200)).data ?? [],
   });
 
-  if (roleCheck.isLoading) return null;
+  if (loading || !user || roleCheck.isPending) return <AppShell><p className="p-10 text-center text-muted-foreground">Verificando acesso…</p></AppShell>;
   if (!roleCheck.data) return <Navigate to="/feed" />;
 
   const run = async (fn: () => Promise<unknown>, msg: string) => {
