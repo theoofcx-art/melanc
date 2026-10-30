@@ -119,3 +119,7 @@
   0%, 100% { transform: translateY(0) rotate(-6deg) scaleX(1); }
   50% { transform: translateY(-3px) rotate(6deg) scaleX(0.85); }
 }
+
+#lovable-badge {
+  display: none !important;
+}
