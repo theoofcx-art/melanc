@@ -36,7 +36,7 @@ function Create() {
         paths.push(await uploadMedia(user.id, f));
         types.push(f.type.startsWith("video") ? "video" : "image");
       }
-      const kind = files.length === 0 ? "text" : files.length > 1 ? "carousel" : types[0];
+      const kind = files.length === 0 ? "text" : files.length > 1 ? "carousel" : types[0] ?? "image";
       const { error } = await supabase.from("posts").insert({
         author_id: user.id,
         kind,
