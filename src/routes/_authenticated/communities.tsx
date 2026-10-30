@@ -47,7 +47,7 @@ function Communities() {
         <h1 className="mb-3 font-display text-2xl font-bold">{tag ? `#${tag}` : "Comunidades"}</h1>
         {tag ? (
           <div className="mb-4 flex gap-2">
-            <Link to="/communities" search={{}} className="rounded-full bg-secondary px-4 py-2 text-sm">← Todas</Link>
+            <Link to="/communities" search={{ tag: undefined }} className="rounded-full bg-secondary px-4 py-2 text-sm">← Todas</Link>
             <button onClick={toggleJoin} className={`rounded-full px-4 py-2 text-sm font-medium ${joined ? "bg-secondary" : "bg-melon text-primary-foreground"}`}>{joined ? "Participando" : "Participar"}</button>
           </div>
         ) : (
