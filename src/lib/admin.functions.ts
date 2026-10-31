@@ -28,3 +28,15 @@ export const adminSetVerified = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminBoostPost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ postId: z.string().uuid(), days: z.number().int().min(0).max(365) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const until = data.days === 0 ? null : new Date(Date.now() + data.days * 86400000).toISOString();
+    const { error } = await supabaseAdmin.from("posts").update({ boosted_until: until }).eq("id", data.postId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
