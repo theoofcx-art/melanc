@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, MoreHorizontal, Trash2, Send } from "lucide-react";
+import { ExternalLink, Flame, Heart, MessageCircle, MoreHorizontal, Trash2, Send } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -10,6 +10,7 @@ import { useMe } from "@/lib/auth";
 import { useMediaUrl } from "@/lib/media";
 import { spotifyEmbedUrl } from "@/lib/hashtags";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FILTERS, isBoosted } from "@/lib/feed";
 import { UserAvatar, Verified } from "./Avatar";
 import { Sticker, StickerPicker } from "./Stickers";
 
@@ -22,6 +23,10 @@ export type FeedPost = {
   media_types: string[];
   hashtags: string[];
   spotify_url: string | null;
+  link_url?: string | null;
+  filter?: string | null;
+  collaborators?: string[];
+  boosted_until?: string | null;
   created_at: string;
   author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean } | null;
   likes: { user_id: string }[];
@@ -31,14 +36,15 @@ export type FeedPost = {
 export const POST_SELECT =
   "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified), likes(user_id), comments(count)";
 
-function Media({ path, type, vertical }: { path: string; type: string; vertical: boolean }) {
+function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
+  const style = { filter: FILTERS[filter ?? "none"]?.css ?? "none" };
   const cls = `w-full shrink-0 snap-center bg-bar object-cover ${vertical ? "h-[72vh]" : "aspect-[4/5]"}`;
   if (!url) return <div className={cls} />;
   return type === "video" ? (
-    <video src={url} className={cls} controls playsInline loop muted={false} preload="metadata" />
+    <video src={url} style={style} className={cls} controls playsInline loop muted={false} preload="metadata" />
   ) : (
-    <img src={url} alt="" className={cls} loading="lazy" />
+    <img src={url} alt="" style={style} className={cls} loading="lazy" />
   );
 }
 
@@ -111,6 +117,22 @@ function Comments({ postId }: { postId: string }) {
   );
 }
 
+function Collabs({ ids }: { ids: string[] }) {
+  const q = useQuery({
+    queryKey: ["collab-profiles", ids.join(",")],
+    queryFn: async () => (await supabase.from("profiles").select("id,username").in("id", ids)).data ?? [],
+  });
+  if (!q.data?.length) return null;
+  return (
+    <span className="text-xs text-muted-foreground">
+      <span className="mr-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-foreground">met</span>
+      {q.data.map((p, i) => (
+        <span key={p.id}>{i > 0 && ", "}<Link to="/u/$username" params={{ username: p.username }} className="font-semibold text-foreground">@{p.username}</Link></span>
+      ))}
+    </span>
+  );
+}
+
 export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?: boolean }) {
   const { user, isAdmin } = useMe();
   const qc = useQueryClient();
@@ -147,6 +169,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
             {post.author?.display_name} <Verified show={post.author?.is_verified} />
           </p>
           <p className="text-xs text-muted-foreground">
+            {isBoosted(post) ? <span className="mr-1 inline-flex items-center gap-0.5 text-melon"><Flame className="h-3 w-3" />Turbmels ·</span> : null}
             @{post.author?.username} · {formatDistanceToNow(new Date(post.created_at), { locale: ptBR })}
           </p>
         </Link>
@@ -166,7 +189,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
         <div className="relative">
           <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
             {post.media_urls.map((m, i) => (
-              <Media key={m} path={m} type={post.media_types[i] ?? "image"} vertical={vertical} />
+              <Media key={m} path={m} type={post.media_types[i] ?? "image"} vertical={vertical} filter={post.filter} />
             ))}
           </div>
           {post.media_urls.length > 1 && (
@@ -175,7 +198,13 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
         </div>
       )}
 
+      {post.link_url && (
+        <a href={post.link_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-primary px-4 py-3 text-sm font-semibold">
+          Saiba mais <ExternalLink className="h-4 w-4" />
+        </a>
+      )}
       <div className="space-y-3 px-4 py-3">
+        {!!post.collaborators?.length && <Collabs ids={post.collaborators} />}
         {post.content && <Content text={post.content} />}
         {embed && <iframe title="Spotify" src={embed} className="h-20 w-full rounded-xl" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
         <div className="flex items-center gap-5 text-muted-foreground">

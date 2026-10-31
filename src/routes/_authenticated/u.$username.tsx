@@ -50,7 +50,7 @@ function ProfilePage() {
       const [followers, following, posts] = await Promise.all([
         supabase.from("follows").select("follower_id, follower:profiles!follows_follower_id_fkey(avatar_url,display_name)").eq("following_id", p!.id),
         supabase.from("follows").select("following_id").eq("follower_id", p!.id),
-        supabase.from("posts").select(POST_SELECT).eq("author_id", p!.id).order("created_at", { ascending: false }),
+        supabase.from("posts").select(POST_SELECT).or(`author_id.eq.${p!.id},collaborators.cs.{${p!.id}}`).order("created_at", { ascending: false }),
       ]);
       const fs = new Set((following.data ?? []).map((f) => f.following_id));
       const connections = (followers.data ?? []).filter((f) => fs.has(f.follower_id)).length;

@@ -1,14 +1,14 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, Trash2, UserX } from "lucide-react";
+import { BadgeCheck, Flame, Trash2, UserX } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { useMe } from "@/lib/auth";
-import { adminDeleteUser, adminSetVerified } from "@/lib/admin.functions";
+import { adminBoostPost, adminDeleteUser, adminSetVerified } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Melan" }, { name: "robots", content: "noindex" }] }),
@@ -21,6 +21,7 @@ function Admin() {
   const [tab, setTab] = useState<"users" | "posts">("users");
   const del = useServerFn(adminDeleteUser);
   const verify = useServerFn(adminSetVerified);
+  const boost = useServerFn(adminBoostPost);
   const roleCheck = useQuery({
     queryKey: ["is-admin-strict", user?.id],
     enabled: !!user,
@@ -34,7 +35,7 @@ function Admin() {
   const posts = useQuery({
     queryKey: ["posts", "admin"],
     enabled: !!roleCheck.data && tab === "posts",
-    queryFn: async () => (await supabase.from("posts").select("id,content,kind,created_at,author:profiles!posts_author_id_fkey(username)").order("created_at", { ascending: false }).limit(200)).data ?? [],
+    queryFn: async () => (await supabase.from("posts").select("id,content,kind,created_at,boosted_until,author:profiles!posts_author_id_fkey(username)").order("created_at", { ascending: false }).limit(200)).data ?? [],
   });
 
   if (loading || !user || roleCheck.isPending) return <AppShell><p className="p-10 text-center text-muted-foreground">Verificando acesso…</p></AppShell>;
@@ -63,7 +64,8 @@ function Admin() {
           </div>
         )) : posts.data?.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-card p-3">
-            <div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">@{p.author?.username} · {p.kind}</p><p className="truncate text-sm">{p.content || "(mídia)"}</p></div>
+            <div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">@{p.author?.username} · {p.kind}</p><p className="truncate text-sm">{p.content || "(mídia)"}</p>{p.boosted_until && new Date(p.boosted_until) > new Date() && <p className="text-xs text-melon">Turbinado até {new Date(p.boosted_until).toLocaleString("pt-BR")}</p>}</div>
+            <button aria-label="Turbinar" onClick={() => { const v = prompt("Turbinar por quantos dias? (0 para parar)", "1"); if (v === null) return; const n = parseInt(v, 10); if (Number.isNaN(n)) return; run(() => boost({ data: { postId: p.id, days: n } }), n ? `Turbinado por ${n} dia(s)` : "Turbo removido"); }} className="rounded-full bg-melon p-2 text-primary-foreground"><Flame className="h-4 w-4" /></button>
             <button aria-label="Remover" onClick={() => confirm("Remover publicação?") && run(async () => { const { error } = await supabase.from("posts").delete().eq("id", p.id); if (error) throw error; }, "Publicação removida")} className="rounded-full bg-destructive p-2"><Trash2 className="h-4 w-4" /></button>
           </div>
         ))}

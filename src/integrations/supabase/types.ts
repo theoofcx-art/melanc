@@ -219,33 +219,45 @@ export type Database = {
       posts: {
         Row: {
           author_id: string
+          boosted_until: string | null
+          collaborators: string[]
           content: string | null
           created_at: string
+          filter: string | null
           hashtags: string[]
           id: string
           kind: string
+          link_url: string | null
           media_types: string[]
           media_urls: string[]
           spotify_url: string | null
         }
         Insert: {
           author_id: string
+          boosted_until?: string | null
+          collaborators?: string[]
           content?: string | null
           created_at?: string
+          filter?: string | null
           hashtags?: string[]
           id?: string
           kind?: string
+          link_url?: string | null
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
         }
         Update: {
           author_id?: string
+          boosted_until?: string | null
+          collaborators?: string[]
           content?: string | null
           created_at?: string
+          filter?: string | null
           hashtags?: string[]
           id?: string
           kind?: string
+          link_url?: string | null
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
