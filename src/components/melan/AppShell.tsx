@@ -37,7 +37,7 @@ export function AppShell({ children, hideHeader }: { children: ReactNode; hideHe
     { to: "/communities", icon: Users, label: "Comunidades" },
     { to: "/wyp", icon: Bot, label: "Wyp IA" },
     { to: "/create", icon: Plus, label: "Criar", center: true },
-    { to: "/texts", icon: AlignLeft, label: "Textos" },
+    { to: "/feed", icon: Home, label: "Início" },
   ];
 
   return (
