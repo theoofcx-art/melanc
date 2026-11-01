@@ -109,20 +109,20 @@ function ProfilePage() {
             ) : (
               <div className="flex gap-2">
                 <Link to="/messages/$userId" params={{ userId: p.id }} aria-label="Mensagem" className="rounded-full bg-secondary p-3"><Send className="h-5 w-5" /></Link>
-                <button onClick={follow} className={`rounded-full px-6 py-2.5 ${s?.amFollowing ? "bg-secondary" : "bg-melon text-primary-foreground"}`}>{s?.amFollowing ? "Admirando" : "Admirar"}</button>
+                <button onClick={follow} className={`rounded-full px-6 py-2.5 ${s?.amFollowing ? "bg-secondary" : "bg-melon text-primary-foreground"}`}>{s?.amFollowing ? "Seguindo" : "Seguir"}</button>
               </div>
             )}
           </div>
           <div className="mt-8 grid grid-cols-3 text-center">
             <Stat n={s?.connections ?? 0} label="Conexões" />
-            <Stat n={s?.hearts ?? 0} label="Corações" wide />
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center -space-x-3">
                 {(s?.followers ?? []).slice(0, 3).map((f) => <UserAvatar key={f.follower_id} path={f.follower?.avatar_url} name={f.follower?.display_name} className="h-12 w-12 ring-2 ring-background" />)}
                 <span className="flex h-12 min-w-12 items-center justify-center rounded-full bg-secondary px-3 text-xl font-semibold">{s?.followers.length ?? 0}</span>
               </div>
-              <span className="text-base">Admiradores</span>
+              <span className="text-base">Seguidores</span>
             </div>
+            <Stat n={s?.hearts ?? 0} label="Corações" />
           </div>
           {isMe && (
             <Link to="/create" className="mx-auto mt-6 flex w-fit flex-col items-center gap-2">

@@ -7,6 +7,7 @@ import { AppShell } from "@/components/melan/AppShell";
 import { PostCard, POST_SELECT, type FeedPost } from "@/components/melan/PostCard";
 import { useMe } from "@/lib/auth";
 import { rankFeed, type Signals } from "@/lib/feed";
+import { SuggestFollow } from "@/components/melan/SuggestFollow";
 
 export const Route = createFileRoute("/_authenticated/feed")({
   head: () => ({ meta: [{ title: "Feed — Melan" }, { name: "description", content: "Seu feed Melan, que aprende com o que você curte e segue." }] }),
@@ -62,6 +63,7 @@ function Feed() {
           <button aria-label="Modo em pé" onClick={() => toggle(true)} className={`rounded-full p-2 ${vertical ? "bg-primary" : ""}`}><Smartphone className="h-4 w-4" /></button>
         </div>
       </div>
+      <SuggestFollow />
       <div className={vertical ? "no-scrollbar h-[calc(100vh-9rem)] snap-y snap-mandatory space-y-3 overflow-y-auto px-2" : "space-y-4 px-3"}>
         {posts.isLoading && <p className="py-10 text-center text-muted-foreground">Carregando…</p>}
         {!posts.isLoading && ranked.length === 0 && (
