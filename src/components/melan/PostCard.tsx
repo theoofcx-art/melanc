@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Flame, Heart, MessageCircle, MoreHorizontal, Trash2, Send } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type React from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -42,10 +43,81 @@ function Media({ path, type, vertical, filter }: { path: string; type: string; v
   const cls = `w-full shrink-0 snap-center bg-bar ${vertical ? "h-[72vh] object-cover" : "h-auto max-h-[85vh] object-contain"}`;
   if (!url) return <div className={`${cls} ${vertical ? "" : "aspect-square"}`} />;
   return type === "video" ? (
-    <video src={url} style={style} className={cls} controls playsInline loop muted={false} preload="metadata" />
+    <AutoVideo src={url} style={style} className={cls} />
   ) : (
     <img src={url} alt="" style={style} className={cls} loading="lazy" />
   );
+}
+
+// Plays when the video reaches the middle of the screen, pauses when scrolled away; one tap pauses/plays.
+function AutoVideo({ src, style, className }: { src: string; style: React.CSSProperties; className: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const userPaused = useRef(false);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !userPaused.current) {
+          v.play().catch(() => { v.muted = true; v.play().catch(() => {}); });
+        } else if (!e.isIntersecting) {
+          v.pause();
+          userPaused.current = false;
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+  const toggle = () => {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = false;
+    if (v.paused) { userPaused.current = false; v.play().catch(() => {}); }
+    else { userPaused.current = true; v.pause(); }
+  };
+  return <video ref={ref} src={src} style={style} className={className} onClick={toggle} playsInline loop preload="metadata" />;
+}
+
+declare global {
+  interface Window { onSpotifyIframeApiReady?: (api: any) => void; __spotifyApi?: Promise<any> }
+}
+function spotifyApi(): Promise<any> {
+  if (!window.__spotifyApi) {
+    window.__spotifyApi = new Promise((resolve) => {
+      window.onSpotifyIframeApiReady = resolve;
+      const sc = document.createElement("script");
+      sc.src = "https://open.spotify.com/embed/iframe-api/v1";
+      sc.async = true;
+      document.body.appendChild(sc);
+    });
+  }
+  return window.__spotifyApi;
+}
+
+// Spotify player that starts in the middle of the screen and pauses when scrolled away.
+function AutoSpotify({ url }: { url: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let ctrl: any;
+    let io: IntersectionObserver | undefined;
+    let dead = false;
+    const target = document.createElement("div");
+    el.appendChild(target);
+    spotifyApi().then((api) => {
+      if (dead) return;
+      api.createController(target, { uri: url, height: 80, width: "100%" }, (c: any) => {
+        ctrl = c;
+        io = new IntersectionObserver(([e]) => (e.isIntersecting ? c.resume() : c.pause()), { rootMargin: "-45% 0px -45% 0px" });
+        io.observe(el);
+      });
+    });
+    return () => { dead = true; io?.disconnect(); ctrl?.destroy?.(); el.innerHTML = ""; };
+  }, [url]);
+  return <div ref={box} className="h-20 w-full overflow-hidden rounded-xl" />;
 }
 
 function Content({ text }: { text: string }) {
@@ -206,7 +278,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
       <div className="space-y-3 px-4 py-3">
         {!!post.collaborators?.length && <Collabs ids={post.collaborators} />}
         {post.content && <Content text={post.content} />}
-        {embed && <iframe title="Spotify" src={embed} className="h-20 w-full rounded-xl" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />}
+        {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">
             <Heart className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
