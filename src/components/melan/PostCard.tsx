@@ -278,7 +278,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
       <div className="space-y-3 px-4 py-3">
         {!!post.collaborators?.length && <Collabs ids={post.collaborators} />}
         {post.content && <Content text={post.content} />}
-        {embed && post.spotify_url && <AutoSpotify url={post.spotify_url} />}
+        {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">
             <Heart className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
