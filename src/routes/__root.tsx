@@ -36,16 +36,26 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    // Old app version cached on the phone: reload once to fetch the new files.
+    const msg = String((error as Error)?.message ?? error);
+    if (/dynamically imported module|Importing a module script|Loading chunk|module script failed/i.test(msg)) {
+      const key = "melan-chunk-reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.location.reload();
+      }
+    }
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">Esta página não carregou</h1>
         <p className="mt-2 text-sm text-muted-foreground">Algo deu errado. Tente novamente.</p>
+        <p className="mt-2 break-words text-xs text-muted-foreground/70">{String((error as Error)?.message ?? "").slice(0, 160)}</p>
         <button
           onClick={() => {
-            router.invalidate();
-            reset();
+            sessionStorage.removeItem("melan-chunk-reload");
+            window.location.reload();
           }}
           className="mt-6 rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground"
         >
