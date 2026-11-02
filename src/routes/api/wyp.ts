@@ -6,7 +6,7 @@ const Body = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) })).min(1).max(60),
 });
 
-const SYSTEM = `Você é a Wyp, a assistente de IA da rede social Melan 🍉🦇. Responda em português do Brasil (ou no idioma do usuário), de forma simpática, clara e direta. Ajude com dúvidas gerais, estudos (explique passo a passo), conversas e pesquisas. Use a busca na web para informações atuais e cite os links quando usar. Formate com markdown leve.`;
+const SYSTEM = `Você é a Wyp, a assistente de IA da rede social Melan 🍉🎄. Responda em português do Brasil (ou no idioma do usuário), de forma simpática, clara e direta. Ajude com dúvidas gerais, estudos (explique passo a passo), conversas e pesquisas. Use a busca na web para informações atuais e cite os links quando usar. Formate com markdown leve.`;
 
 export const Route = createFileRoute("/api/wyp")({
   server: {

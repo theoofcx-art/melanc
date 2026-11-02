@@ -39,7 +39,7 @@ export const POST_SELECT =
 function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
   const style = { filter: FILTERS[filter ?? "none"]?.css ?? "none" };
-  const cls = `w-full shrink-0 snap-center bg-bar object-cover ${vertical ? "h-[72vh]" : "aspect-[4/5]"}`;
+  const cls = `w-full shrink-0 snap-center bg-bar ${vertical ? "h-[72vh] object-cover" : "h-auto max-h-[85vh] object-contain"}`;
   if (!url) return <div className={cls} />;
   return type === "video" ? (
     <video src={url} style={style} className={cls} controls playsInline loop muted={false} preload="metadata" />

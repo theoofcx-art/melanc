@@ -9,7 +9,7 @@ import { UserAvatar } from "./Avatar";
 
 function HeaderIcon({ to, label, children, badge }: { to: string; label: string; children: ReactNode; badge?: number }) {
   return (
-    <Link to={to} aria-label={label} className="relative flex h-10 w-10 items-center justify-center rounded-full bg-secondary/70 text-foreground transition hover:bg-accent">
+    <Link to={to} aria-label={label} className="relative flex h-10 w-10 items-center justify-center glass rounded-full text-foreground transition hover:bg-accent">
       {children}
       {!!badge && (
         <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-melon px-1 text-[10px] font-semibold text-primary-foreground">
@@ -43,7 +43,7 @@ export function AppShell({ children, hideHeader }: { children: ReactNode; hideHe
   return (
     <div className="mx-auto min-h-screen max-w-xl pb-28">
       {!hideHeader && (
-        <header className="sticky top-0 z-30 flex items-center justify-between bg-background/85 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)] backdrop-blur">
+        <header className="sticky top-0 z-30 flex items-center justify-between glass rounded-b-3xl border-t-0 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.9rem)]">
           <HeaderIcon to="/search" label="Pesquisar"><Search className="h-5 w-5" /></HeaderIcon>
           <Link to="/feed" aria-label="Início"><MelanLogo /></Link>
           <div className="flex gap-2">
@@ -60,7 +60,7 @@ export function AppShell({ children, hideHeader }: { children: ReactNode; hideHe
       <main>{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-xl px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-        <div className="flex items-center justify-around rounded-full bg-bar px-2 py-2 shadow-float">
+        <div className="flex items-center justify-around glass rounded-full px-2 py-2">
           {tabs.map((t) =>
             t.center ? (
               <Link key={t.to} to={t.to} aria-label={t.label} className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full bg-melon text-primary-foreground shadow-float ring-4 ring-background transition active:scale-95">
