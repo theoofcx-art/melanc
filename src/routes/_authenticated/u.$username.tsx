@@ -8,19 +8,20 @@ import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { PostCard, POST_SELECT, type FeedPost } from "@/components/melan/PostCard";
 import { useMe, type Profile } from "@/lib/auth";
 import { useMediaUrl } from "@/lib/media";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: ({ params }) => ({ meta: [{ title: `@${params.username} — Melan` }, { name: "description", content: `Perfil de @${params.username} no Melan.` }] }),
   component: ProfilePage,
 });
 
-function Thumb({ post }: { post: FeedPost }) {
+function Thumb({ post, onOpen }: { post: FeedPost; onOpen: () => void }) {
   const url = useMediaUrl(post.media_urls[0]);
   const isVideo = post.media_types[0] === "video";
   return (
-    <div className="aspect-[3/4] overflow-hidden rounded-xl bg-card">
+    <button type="button" onClick={onOpen} aria-label="Abrir publicação" className="aspect-[3/4] overflow-hidden rounded-xl bg-card">
       {url && (isVideo ? <video src={url} className="h-full w-full object-cover" muted /> : <img src={url} alt="" className="h-full w-full object-cover" />)}
-    </div>
+    </button>
   );
 }
 
@@ -30,6 +31,7 @@ function ProfilePage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"media" | "video" | "text">("media");
+  const [openId, setOpenId] = useState<string | null>(null);
   const uname = username === "me" ? me?.username : username;
 
   const prof = useQuery({
@@ -145,8 +147,14 @@ function ProfilePage() {
           {tab === "text" ? (
             <div className="mt-3 space-y-3 px-3">{shown.map((x) => <PostCard key={x.id} post={x} />)}</div>
           ) : (
-            <div className="mt-3 grid grid-cols-3 gap-1 px-1">{shown.map((x) => <Thumb key={x.id} post={x} />)}</div>
+            <div className="mt-3 grid grid-cols-3 gap-1 px-1">{shown.map((x) => <Thumb key={x.id} post={x} onOpen={() => setOpenId(x.id)} />)}</div>
           )}
+          <Dialog open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
+            <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto border-0 bg-transparent p-0 shadow-none">
+              <DialogTitle className="sr-only">Publicação</DialogTitle>
+              {(() => { const post = s?.posts.find((x) => x.id === openId); return post ? <PostCard post={post} /> : null; })()}
+            </DialogContent>
+          </Dialog>
           {shown.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Nada aqui ainda</p>}
         </>
       )}

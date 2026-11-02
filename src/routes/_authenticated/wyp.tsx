@@ -110,7 +110,7 @@ function Wyp() {
         </div>
       </div>
       <div className="fixed inset-x-0 bottom-24 z-30 mx-auto max-w-xl px-3">
-        <div className="flex items-center gap-2 rounded-full bg-card p-1.5 shadow-float">
+        <div className="flex items-center gap-2 rounded-full glass p-1.5">
           <button aria-label="Modo imagem" onClick={() => setImageMode((v) => !v)} className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${imageMode ? "bg-melon text-primary-foreground" : "bg-secondary"}`}><ImageIcon className="h-4 w-4" /></button>
           <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={imageMode ? "Descreva a imagem…" : "Pergunte à Wyp…"} className="h-10 flex-1 bg-transparent px-2 text-sm outline-none" />
           <button aria-label="Enviar" disabled={busy} onClick={send} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary disabled:opacity-50"><Send className="h-4 w-4" /></button>
