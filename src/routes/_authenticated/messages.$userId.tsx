@@ -26,6 +26,7 @@ function Chat() {
   const msgs = useQuery({
     queryKey: ["dm", userId, user?.id],
     enabled: !!user,
+    refetchInterval: 4000,
     queryFn: async () => {
       const { data } = await supabase.from("messages").select("*")
         .or(`and(sender_id.eq.${user!.id},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${user!.id})`)

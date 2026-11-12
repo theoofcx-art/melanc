@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { useMe } from "@/lib/auth";
-import { adminBoostPost, adminDeleteUser, adminSetVerified } from "@/lib/admin.functions";
+import { adminBoostPost, adminDeleteUser, adminGiveFrame, adminSetVerified } from "@/lib/admin.functions";
+import { FRAMES, type FrameKey } from "@/lib/frames";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Melan" }, { name: "robots", content: "noindex" }] }),
@@ -22,10 +23,16 @@ function Admin() {
   const del = useServerFn(adminDeleteUser);
   const verify = useServerFn(adminSetVerified);
   const boost = useServerFn(adminBoostPost);
+  const giveFrame = useServerFn(adminGiveFrame);
   const roleCheck = useQuery({
     queryKey: ["is-admin-strict", user?.id],
     enabled: !!user,
     queryFn: async () => !!(await supabase.rpc("has_role", { _user_id: user!.id, _role: "admin" })).data,
+  });
+  const frames = useQuery({
+    queryKey: ["admin-frames"],
+    enabled: !!roleCheck.data,
+    queryFn: async () => (await supabase.from("user_frames").select("user_id,frame")).data ?? [],
   });
   const users = useQuery({
     queryKey: ["admin-users"],
@@ -58,6 +65,10 @@ function Admin() {
             <UserAvatar path={u.avatar_url} name={u.display_name} />
             <div className="min-w-0 flex-1"><p className="truncate font-semibold">{u.display_name} <Verified show={u.is_verified} /></p><p className="text-xs text-muted-foreground">@{u.username}</p></div>
             <button aria-label="Verificar" onClick={() => run(() => verify({ data: { userId: u.id, verified: !u.is_verified } }), u.is_verified ? "Selo removido" : "Selo concedido")} className={`rounded-full p-2 ${u.is_verified ? "bg-verified" : "bg-secondary"}`}><BadgeCheck className="h-4 w-4" /></button>
+            {(Object.keys(FRAMES) as FrameKey[]).filter((k) => !FRAMES[k].free).map((k) => {
+              const has = frames.data?.some((r) => r.user_id === u.id && r.frame === k);
+              return <button key={k} aria-label={`Moldura ${FRAMES[k].label}`} onClick={() => run(() => giveFrame({ data: { userId: u.id, frame: k, give: !has } }), has ? "Moldura retirada" : "Moldura dada")} className={`rounded-full p-0.5 ${has ? "bg-melon" : "bg-secondary"}`}><img src={FRAMES[k].url} alt="" className="h-7 w-7" /></button>;
+            })}
             {u.id !== user?.id && (
               <button aria-label="Banir" onClick={() => confirm(`Banir e excluir @${u.username} permanentemente?`) && run(() => del({ data: { userId: u.id } }), "Conta excluída")} className="rounded-full bg-destructive p-2"><UserX className="h-4 w-4" /></button>
             )}

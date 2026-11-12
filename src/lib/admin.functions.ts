@@ -40,3 +40,16 @@ export const adminBoostPost = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminGiveFrame = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), frame: z.enum(["natal", "nyan"]), give: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = data.give
+      ? await supabaseAdmin.from("user_frames").upsert({ user_id: data.userId, frame: data.frame }, { onConflict: "user_id,frame", ignoreDuplicates: true })
+      : await supabaseAdmin.from("user_frames").delete().eq("user_id", data.userId).eq("frame", data.frame);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Plus, Image as ImageIcon, Film, AlignLeft, Lock, LogOut, Send } from "lucide-react";
+import { Link2, Plus, Image as ImageIcon, Film, AlignLeft, Lock, LogOut, Send, Share2 } from "lucide-react";
+import { shareLink } from "@/lib/share";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
@@ -89,7 +90,7 @@ function ProfilePage() {
           )}
           <div className="flex items-center gap-4">
             <div className="relative">
-              <UserAvatar path={p.avatar_url} name={p.display_name} className="h-28 w-28 ring-4 ring-background/40" />
+              <UserAvatar path={p.avatar_url} name={p.display_name} frame={p.frame} className="h-28 w-28 ring-4 ring-background/40" />
               {isMe && <Link to="/create" aria-label="Novo" className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-verified ring-2 ring-background"><Plus className="h-5 w-5" /></Link>}
             </div>
             <div className="min-w-0">
@@ -106,6 +107,7 @@ function ProfilePage() {
             {p.link ? (
               <a href={p.link.startsWith("http") ? p.link : `https://${p.link}`} target="_blank" rel="noreferrer noopener" className="flex items-center gap-2 truncate text-lg"><Link2 className="h-5 w-5" />{p.link.replace(/^https?:\/\//, "")}</a>
             ) : <span />}
+            <button aria-label="Compartilhar perfil" onClick={() => shareLink(`/u/${p.username}`, `@${p.username} na Melan`)} className="rounded-full bg-secondary p-3"><Share2 className="h-5 w-5" /></button>
             {isMe ? (
               <Link to="/profile/edit" className="rounded-full bg-primary px-7 py-2.5 text-lg">Editar</Link>
             ) : (

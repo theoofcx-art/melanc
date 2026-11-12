@@ -18,12 +18,13 @@ async function token() {
 }
 
 async function readSSE(res: Response, onData: (json: any, event?: string) => void) {
-  const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+  const reader = res.body!.getReader();
+  const dec = new TextDecoder();
   let buf = "";
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
-    buf += value;
+    buf += dec.decode(value, { stream: true }).replace(/\r\n/g, "\n");
     let i;
     while ((i = buf.indexOf("\n\n")) >= 0) {
       const block = buf.slice(0, i);

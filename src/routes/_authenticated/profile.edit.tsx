@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FRAMES, availableFrames, type FrameKey } from "@/lib/frames";
+import { shareLink } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +27,19 @@ function Edit() {
     if (profile) setF({ display_name: profile.display_name, username: profile.username, bio: profile.bio ?? "", pronouns: profile.pronouns ?? "", link: profile.link ?? "", interests: profile.interests.join(" "), is_private: profile.is_private, avatar_url: profile.avatar_url, banner_url: profile.banner_url });
   }, [profile]);
   const banner = useMediaUrl(f.banner_url);
+  const owned = useQuery({
+    queryKey: ["my-frames", user?.id],
+    enabled: !!user,
+    queryFn: async () => ((await supabase.from("user_frames").select("frame").eq("user_id", user!.id)).data ?? []).map((r) => r.frame),
+  });
+  const can = availableFrames(owned.data ?? []);
+  const wear = async (key: FrameKey | null) => {
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ frame: key }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries();
+    toast.success(key ? `Moldura ${FRAMES[key].label} aplicada` : "Moldura removida");
+  };
 
   const up = async (file: File, key: "avatar_url" | "banner_url") => {
     if (!user) return;
@@ -67,6 +82,27 @@ function Edit() {
           <Switch checked={f.is_private} onCheckedChange={(v) => setF({ ...f, is_private: v })} />
         </div>
         <button onClick={save} className="h-12 w-full rounded-full bg-melon font-semibold text-primary-foreground">Salvar</button>
+        <section className="space-y-3 rounded-3xl bg-card p-4">
+          <h2 className="font-display text-xl font-bold">Molduras</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <button onClick={() => wear(null)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${!profile?.frame ? "bg-primary" : "bg-secondary"}`}>
+              <UserAvatar path={f.avatar_url} name={f.display_name} className="h-14 w-14" />
+              <span className="text-xs">Sem moldura</span>
+            </button>
+            {(Object.keys(FRAMES) as FrameKey[]).map((k) => {
+              const ok = can.includes(k);
+              return (
+                <button key={k} disabled={!ok} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile?.frame === k ? "bg-primary" : "bg-secondary"} ${ok ? "" : "opacity-50"}`}>
+                  <UserAvatar path={f.avatar_url} name={f.display_name} frame={k} className="h-14 w-14" />
+                  <span className="text-xs">{FRAMES[k].label}</span>
+                  <span className="text-[10px] text-muted-foreground">{ok ? (FRAMES[k].free ? "Grátis" : "Desbloqueada") : "🔒 " + FRAMES[k].how}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button onClick={() => profile && shareLink(`/convite/${profile.username}`, "Entre na Melan comigo 🍉")} className="h-11 w-full rounded-full bg-melon text-sm font-semibold text-primary-foreground">Convidar amigo e ganhar a moldura Arco-íris</button>
+          <p className="text-center text-xs text-muted-foreground">Quando alguém criar conta pelo seu link, vocês dois ganham a moldura.</p>
+        </section>
       </div>
     </AppShell>
   );
