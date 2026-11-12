@@ -264,6 +264,7 @@ export type Database = {
           media_types: string[]
           media_urls: string[]
           spotify_url: string | null
+          view_count: number
         }
         Insert: {
           author_id: string
@@ -279,6 +280,7 @@ export type Database = {
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
+          view_count?: number
         }
         Update: {
           author_id?: string
@@ -294,6 +296,7 @@ export type Database = {
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
+          view_count?: number
         }
         Relationships: [
           {

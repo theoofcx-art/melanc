@@ -32,12 +32,13 @@ export type FeedPost = {
   created_at: string;
   author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean; frame?: string | null } | null;
   post_views?: { count: number }[];
+  view_count?: number;
   likes: { user_id: string }[];
   comments: { count: number }[];
 };
 
 export const POST_SELECT =
-  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), comments(count), post_views(count)";
+  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), comments(count)";
 
 function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
@@ -306,7 +307,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
           <button onClick={() => shareLink(`/p/${post.id}`, `Publicação de @${post.author?.username} na Melan`)} className="flex items-center gap-1.5" aria-label="Compartilhar">
             <Share2 className="h-6 w-6" />
           </button>
-          <span className="ml-auto flex items-center gap-1.5 text-sm" aria-label="Visualizações"><Eye className="h-5 w-5" />{post.post_views?.[0]?.count ?? 0}</span>
+          <span className="ml-auto flex items-center gap-1.5 text-sm" aria-label="Visualizações"><Eye className="h-5 w-5" />{post.view_count ?? 0}</span>
         </div>
       </div>
       {showComments && <Comments postId={post.id} />}
