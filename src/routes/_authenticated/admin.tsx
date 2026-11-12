@@ -20,6 +20,7 @@ function Admin() {
   const { user, loading, isAdmin } = useMe();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"users" | "posts">("users");
+  const [q, setQ] = useState("");
   const del = useServerFn(adminDeleteUser);
   const verify = useServerFn(adminSetVerified);
   const boost = useServerFn(adminBoostPost);
@@ -60,7 +61,8 @@ function Admin() {
           <button onClick={() => setTab("users")} className={`rounded-full py-2 ${tab === "users" ? "bg-primary" : ""}`}>Contas ({users.data?.length ?? 0})</button>
           <button onClick={() => setTab("posts")} className={`rounded-full py-2 ${tab === "posts" ? "bg-primary" : ""}`}>Publicações</button>
         </div>
-        {tab === "users" ? users.data?.map((u) => (
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === "users" ? "Pesquisar por nome, @ ou ID" : "Pesquisar por @ ou texto"} className="h-11 w-full rounded-full bg-card px-5 text-sm outline-none" />
+        {tab === "users" ? users.data?.filter((u) => { const t = q.trim().toLowerCase().replace(/^@/, ""); return !t || u.username.toLowerCase().includes(t) || u.display_name.toLowerCase().includes(t) || u.id.startsWith(t); }).map((u) => (
           <div key={u.id} className="flex items-center gap-3 rounded-2xl bg-card p-3">
             <UserAvatar path={u.avatar_url} name={u.display_name} />
             <div className="min-w-0 flex-1"><p className="truncate font-semibold">{u.display_name} <Verified show={u.is_verified} /></p><p className="text-xs text-muted-foreground">@{u.username}</p></div>
@@ -73,7 +75,7 @@ function Admin() {
               <button aria-label="Banir" onClick={() => confirm(`Banir e excluir @${u.username} permanentemente?`) && run(() => del({ data: { userId: u.id } }), "Conta excluída")} className="rounded-full bg-destructive p-2"><UserX className="h-4 w-4" /></button>
             )}
           </div>
-        )) : posts.data?.map((p) => (
+        )) : posts.data?.filter((p) => { const t = q.trim().toLowerCase().replace(/^@/, ""); return !t || (p.author?.username ?? "").toLowerCase().includes(t) || (p.content ?? "").toLowerCase().includes(t); }).map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-2xl bg-card p-3">
             <div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">@{p.author?.username} · {p.kind}</p><p className="truncate text-sm">{p.content || "(mídia)"}</p>{p.boosted_until && new Date(p.boosted_until) > new Date() && <p className="text-xs text-melon">Turbinado até {new Date(p.boosted_until).toLocaleString("pt-BR")}</p>}</div>
             <button aria-label="Turbinar" onClick={() => { const v = prompt("Turbinar por quantos dias? (0 para parar)", "1"); if (v === null) return; const n = parseInt(v, 10); if (Number.isNaN(n)) return; run(() => boost({ data: { postId: p.id, days: n } }), n ? `Turbinado por ${n} dia(s)` : "Turbo removido"); }} className="rounded-full bg-melon p-2 text-primary-foreground"><Flame className="h-4 w-4" /></button>

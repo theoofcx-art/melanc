@@ -36,6 +36,13 @@
       "when": 1794480500587,
       "tag": "0004_tighten_social_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794525361556,
+      "tag": "0005_reposts_collab_invites_comment_replies_frames",
+      "breakpoints": true
     }
   ]
 }

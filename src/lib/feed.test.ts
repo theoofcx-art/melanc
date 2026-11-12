@@ -29,4 +29,13 @@ describe("feed", () => {
     const posts = [{ ...base, id: "a", author_id: "x" }, { ...base, id: "v", author_id: "y", author: { is_verified: true } }];
     expect(rankFeed(posts, empty, now)[0].id).toBe("v");
   });
+  it("shows unseen posts before seen ones, keeping seen ones in the feed", () => {
+    const posts = [{ ...base, id: "a", author_id: "f" }, { ...base, id: "b", author_id: "x" }];
+    const out = rankFeed(posts, { ...empty, followed: new Set(["f"]), seen: new Set(["a"]) }, now).map((p) => p.id);
+    expect(out).toEqual(["b", "a"]);
+  });
+  it("posts reposted by people you follow rank higher", () => {
+    const posts = [{ ...base, id: "a", author_id: "x" }, { ...base, id: "b", author_id: "y" }];
+    expect(rankFeed(posts, { ...empty, repostedByFollowed: new Map([["b", 1]]) }, now)[0].id).toBe("b");
+  });
 });

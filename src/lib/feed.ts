@@ -5,12 +5,18 @@ export const BOOST_REPEAT_EVERY = 5;
 
 /** Verified accounts get extra reach in the feed. */
 export const VERIFIED_BONUS = 4;
+/** Each repost by someone you follow pushes the post up. */
+export const REPOST_BONUS = 5;
 
 export type Signals = {
   followed: Set<string>;
   likedAuthors: Map<string, number>;
   likedTags: Map<string, number>;
   interests: Set<string>;
+  /** Posts the user already saw: unseen ones go first (boosts are unaffected). */
+  seen?: Set<string>;
+  /** How many people the user follows reposted each post. */
+  repostedByFollowed?: Map<string, number>;
 };
 
 type P = { id: string; author_id: string; author?: { is_verified?: boolean } | null; hashtags: string[]; created_at: string; boosted_until?: string | null; likes: unknown[] };
@@ -30,6 +36,7 @@ export function scorePost(p: P, s: Signals, now = Date.now()) {
     if (s.interests.has(tag)) score += 2;
   }
   if (p.author?.is_verified) score += VERIFIED_BONUS;
+  score += Math.min(s.repostedByFollowed?.get(p.id) ?? 0, 3) * REPOST_BONUS;
   score += Math.log2(1 + p.likes.length);
   const hours = (now - new Date(p.created_at).getTime()) / 36e5;
   score -= hours / 12;
@@ -37,7 +44,8 @@ export function scorePost(p: P, s: Signals, now = Date.now()) {
 }
 
 export function rankFeed<T extends P>(posts: T[], s: Signals, now = Date.now()): T[] {
-  const ranked = [...posts].sort((a, b) => scorePost(b, s, now) - scorePost(a, s, now));
+  const seen = s.seen ?? new Set<string>();
+  const ranked = [...posts].sort((a, b) => Number(seen.has(a.id)) - Number(seen.has(b.id)) || scorePost(b, s, now) - scorePost(a, s, now));
   const boosted = posts.filter((p) => isBoosted(p, now));
   if (!boosted.length) return ranked;
   const out: T[] = [];

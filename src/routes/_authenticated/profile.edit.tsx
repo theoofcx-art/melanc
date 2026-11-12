@@ -32,7 +32,20 @@ function Edit() {
     enabled: !!user,
     queryFn: async () => ((await supabase.from("user_frames").select("frame").eq("user_id", user!.id)).data ?? []).map((r) => r.frame),
   });
-  const can = availableFrames(owned.data ?? []);
+  const followers = useQuery({
+    queryKey: ["follower-count", user?.id],
+    enabled: !!user,
+    queryFn: async () => (await supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", user!.id)).count ?? 0,
+  });
+  const can = availableFrames(owned.data ?? [], followers.data ?? 0);
+  const [refName, setRefName] = useState("");
+  const claim = async () => {
+    const { data, error } = await supabase.rpc("claim_referral", { _ref: refName });
+    if (error) return toast.error(error.message);
+    if (!data) return toast.error("Não foi possível: confira o @ (vale só na primeira semana e uma vez)");
+    toast.success("Moldura Arco-íris liberada para vocês dois! 🌈");
+    qc.invalidateQueries();
+  };
   const wear = async (key: FrameKey | null) => {
     if (!user) return;
     const { error } = await supabase.from("profiles").update({ frame: key }).eq("id", user.id);
@@ -102,6 +115,12 @@ function Edit() {
           </div>
           <button onClick={() => profile && shareLink(`/convite/${profile.username}`, "Entre na Melan comigo 🍉")} className="h-11 w-full rounded-full bg-melon text-sm font-semibold text-primary-foreground">Convidar amigo e ganhar a moldura Arco-íris</button>
           <p className="text-center text-xs text-muted-foreground">Quando alguém criar conta pelo seu link, vocês dois ganham a moldura.</p>
+          {!owned.data?.includes("nyan") && (
+            <div className="flex gap-2">
+              <input value={refName} onChange={(e) => setRefName(e.target.value)} placeholder="Quem te convidou? @usuario" className="h-11 flex-1 rounded-full bg-secondary px-4 text-sm outline-none" />
+              <button onClick={claim} className="h-11 rounded-full bg-primary px-4 text-sm font-semibold">Resgatar</button>
+            </div>
+          )}
         </section>
       </div>
     </AppShell>

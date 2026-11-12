@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Eye, Flame, Heart, MessageCircle, MoreHorizontal, Trash2, Send, Share2 } from "lucide-react";
+import { ExternalLink, Eye, Flame, Heart, MessageCircle, MoreHorizontal, Pin, Repeat2, Reply, Trash2, Send, Share2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
@@ -34,11 +34,12 @@ export type FeedPost = {
   post_views?: { count: number }[];
   view_count?: number;
   likes: { user_id: string }[];
+  reposts?: { user_id: string; user: { username: string; display_name: string; avatar_url: string | null } | null }[];
   comments: { count: number }[];
 };
 
 export const POST_SELECT =
-  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), comments(count)";
+  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), reposts(user_id, user:profiles!reposts_user_id_fkey(username,display_name,avatar_url)), comments(count)";
 
 function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
@@ -139,71 +140,125 @@ function Content({ text }: { text: string }) {
   );
 }
 
-function Comments({ postId }: { postId: string }) {
+type CommentRow = {
+  id: string; post_id: string; author_id: string; content: string | null; sticker: string | null; created_at: string;
+  parent_id: string | null; pinned: boolean;
+  author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean } | null;
+  comment_likes: { user_id: string }[];
+};
+
+function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: string }) {
   const { user, isAdmin } = useMe();
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const [replyTo, setReplyTo] = useState<CommentRow | null>(null);
+  const isOwner = user?.id === postAuthorId;
+  const key = ["comments", postId];
   const q = useQuery({
-    queryKey: ["comments", postId],
+    queryKey: key,
     queryFn: async () => {
       const { data } = await supabase
         .from("comments")
-        .select("*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url,is_verified)")
+        .select("*, author:profiles!comments_author_id_fkey(username,display_name,avatar_url,is_verified), comment_likes(user_id)")
         .eq("post_id", postId)
         .order("created_at");
-      return data ?? [];
+      return (data ?? []) as unknown as CommentRow[];
     },
   });
+  const refresh = () => qc.invalidateQueries({ queryKey: key });
   const send = async (sticker?: string) => {
     if (!user || (!text.trim() && !sticker)) return;
-    const { error } = await supabase.from("comments").insert({ post_id: postId, author_id: user.id, content: sticker ? "" : text.trim().slice(0, 1000), sticker: sticker ?? null });
+    const parent = replyTo ? replyTo.parent_id ?? replyTo.id : null;
+    const { error } = await supabase.from("comments").insert({ post_id: postId, author_id: user.id, parent_id: parent, content: sticker ? "" : text.trim().slice(0, 1000), sticker: sticker ?? null });
     if (error) return toast.error(error.message);
-    setText("");
-    qc.invalidateQueries({ queryKey: ["comments", postId] });
+    setText(""); setReplyTo(null);
+    refresh();
     qc.invalidateQueries({ queryKey: ["posts"] });
+  };
+  const like = async (c: CommentRow) => {
+    if (!user) return;
+    const has = c.comment_likes.some((l) => l.user_id === user.id);
+    if (has) await supabase.from("comment_likes").delete().eq("comment_id", c.id).eq("user_id", user.id);
+    else await supabase.from("comment_likes").insert({ comment_id: c.id, user_id: user.id });
+    refresh();
+  };
+  const pin = async (c: CommentRow) => {
+    const { error } = await supabase.from("comments").update({ pinned: !c.pinned }).eq("id", c.id);
+    if (error) return toast.error(error.message);
+    toast.success(c.pinned ? "Comentário desafixado" : "Comentário fixado");
+    refresh();
+  };
+  const all = q.data ?? [];
+  const tops = all.filter((c) => !c.parent_id).sort((a, b) => Number(b.pinned) - Number(a.pinned));
+  const row = (c: CommentRow, reply: boolean) => {
+    const liked = !!user && c.comment_likes.some((l) => l.user_id === user.id);
+    return (
+      <div key={c.id} className={`flex gap-2 ${reply ? "ml-9" : ""}`}>
+        <UserAvatar path={c.author?.avatar_url} name={c.author?.display_name} className={reply ? "h-6 w-6" : "h-7 w-7"} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted-foreground">
+            {c.pinned && <span className="mr-1 inline-flex items-center gap-0.5 text-melon"><Pin className="h-3 w-3" />Fixado ·</span>}
+            <Link to="/u/$username" params={{ username: c.author?.username ?? "" }} className="font-semibold text-foreground">@{c.author?.username}</Link>{" "}
+            <Verified show={c.author?.is_verified} className="h-3 w-3" />
+          </p>
+          {c.sticker ? <Sticker value={c.sticker} className="h-20 w-20" /> : <p className="text-sm break-words">{c.content}</p>}
+          <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
+            <button onClick={() => { setReplyTo(c); setText(`@${c.author?.username} `); }} className="flex items-center gap-1"><Reply className="h-3.5 w-3.5" />Responder</button>
+            {isOwner && !reply && <button onClick={() => pin(c)} className="flex items-center gap-1"><Pin className="h-3.5 w-3.5" />{c.pinned ? "Desafixar" : "Fixar"}</button>}
+            {(c.author_id === user?.id || isAdmin || isOwner) && (
+              <button aria-label="Excluir comentário" onClick={async () => { await supabase.from("comments").delete().eq("id", c.id); refresh(); }}><Trash2 className="h-3.5 w-3.5" /></button>
+            )}
+          </div>
+        </div>
+        <button aria-label="Curtir comentário" onClick={() => like(c)} className="flex flex-col items-center text-[10px] text-muted-foreground">
+          <Heart className={`h-4 w-4 ${liked ? "fill-melon text-melon" : ""}`} />{c.comment_likes.length || ""}
+        </button>
+      </div>
+    );
   };
   return (
     <div className="space-y-3 border-t border-border px-4 py-3">
-      {(q.data ?? []).map((c) => (
-        <div key={c.id} className="flex gap-2">
-          <UserAvatar path={c.author?.avatar_url} name={c.author?.display_name} className="h-7 w-7" />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground">
-              <Link to="/u/$username" params={{ username: c.author?.username ?? "" }} className="font-semibold text-foreground">@{c.author?.username}</Link>{" "}
-              <Verified show={c.author?.is_verified} className="h-3 w-3" />
-            </p>
-            {c.sticker ? <Sticker value={c.sticker} className="h-20 w-20" /> : <p className="text-sm">{c.content}</p>}
-          </div>
-          {(c.author_id === user?.id || isAdmin) && (
-            <button aria-label="Excluir comentário" onClick={async () => { await supabase.from("comments").delete().eq("id", c.id); qc.invalidateQueries({ queryKey: ["comments", postId] }); }} className="text-muted-foreground">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
+      {tops.map((c) => (
+        <div key={c.id} className="space-y-2">
+          {row(c, false)}
+          {all.filter((r) => r.parent_id === c.id).map((r) => row(r, true))}
         </div>
       ))}
       {user && (
-        <div className="flex items-center gap-2">
-          <StickerPicker onPick={(s) => send(s)} />
-          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder="Comentar…" maxLength={1000} className="h-10 flex-1 rounded-full bg-secondary px-4 text-sm outline-none" />
-          <button aria-label="Enviar" onClick={() => send()} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary"><Send className="h-4 w-4" /></button>
+        <div className="space-y-1">
+          {replyTo && (
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">Respondendo @{replyTo.author?.username}
+              <button aria-label="Cancelar resposta" onClick={() => { setReplyTo(null); setText(""); }}><X className="h-3 w-3" /></button></p>
+          )}
+          <div className="flex items-center gap-2">
+            <StickerPicker onPick={(s) => send(s)} />
+            <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} placeholder={replyTo ? "Responder…" : "Comentar…"} maxLength={1000} className="h-10 flex-1 rounded-full bg-secondary px-4 text-sm outline-none" />
+            <button aria-label="Enviar" onClick={() => send()} className="flex h-10 w-10 items-center justify-center rounded-full bg-primary"><Send className="h-4 w-4" /></button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function Collabs({ ids }: { ids: string[] }) {
-  const q = useQuery({
+function useCollabProfiles(ids: string[]) {
+  return useQuery({
     queryKey: ["collab-profiles", ids.join(",")],
-    queryFn: async () => (await supabase.from("profiles").select("id,username").in("id", ids)).data ?? [],
+    enabled: ids.length > 0,
+    queryFn: async () => (await supabase.from("profiles").select("id,username,display_name,avatar_url,is_verified,frame").in("id", ids)).data ?? [],
   });
-  if (!q.data?.length) return null;
+}
+
+function Reposters({ list }: { list: NonNullable<FeedPost["reposts"]> }) {
+  if (!list.length) return null;
+  const first = list[0].user;
   return (
-    <span className="text-xs text-muted-foreground">
-      <span className="mr-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold uppercase text-foreground">met</span>
-      {q.data.map((p, i) => (
-        <span key={p.id}>{i > 0 && ", "}<Link to="/u/$username" params={{ username: p.username }} className="font-semibold text-foreground">@{p.username}</Link></span>
-      ))}
+    <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-[10px] text-muted-foreground" title={list.map((r) => "@" + r.user?.username).join(", ")}>
+      <Repeat2 className="h-3 w-3 text-rind" />
+      <span className="flex -space-x-2">
+        {list.slice(0, 3).map((r) => <UserAvatar key={r.user_id} path={r.user?.avatar_url} name={r.user?.display_name} className="h-5 w-5 ring-1 ring-card" />)}
+      </span>
+      <span className="max-w-20 truncate">@{first?.username}{list.length > 1 ? ` +${list.length - 1}` : ""}</span>
     </span>
   );
 }
@@ -218,6 +273,19 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
   const likeCount = post.likes.length + (optimistic === null ? 0 : optimistic === liked ? 0 : optimistic ? 1 : -1);
   const embed = spotifyEmbedUrl(post.spotify_url);
   const canDelete = user && (user.id === post.author_id || isAdmin);
+  const collabIds = post.collaborators ?? [];
+  const collabs = useCollabProfiles(collabIds).data ?? [];
+  const reposts = post.reposts ?? [];
+  const reposted = !!user && reposts.some((r) => r.user_id === user.id);
+  const toggleRepost = async () => {
+    if (!user) return;
+    const { error } = reposted
+      ? await supabase.from("reposts").delete().eq("post_id", post.id).eq("user_id", user.id)
+      : await supabase.from("reposts").insert({ post_id: post.id, user_id: user.id });
+    if (error) return toast.error(error.message);
+    if (!reposted) toast.success("Republicado para seus seguidores");
+    qc.invalidateQueries({ queryKey: ["posts"] });
+  };
   const card = useRef<HTMLElement>(null);
   const [viewed, setViewed] = useState(false);
   // Counts one view per person: the database keeps only one row per post and user.
@@ -253,16 +321,23 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
   return (
     <article ref={card} className={`overflow-hidden bg-card ${vertical ? "snap-start rounded-3xl" : "rounded-3xl"}`}>
       <div className="flex items-center gap-3 px-4 py-3">
-        <UserAvatar path={post.author?.avatar_url} name={post.author?.display_name} frame={post.author?.frame} />
-        <Link to="/u/$username" params={{ username: post.author?.username ?? "" }} className="min-w-0 flex-1">
+        <span className="flex shrink-0 -space-x-3">
+          <UserAvatar path={post.author?.avatar_url} name={post.author?.display_name} frame={collabs.length ? null : post.author?.frame} className="h-10 w-10 ring-2 ring-card" />
+          {collabs.slice(0, 2).map((c) => <UserAvatar key={c.id} path={c.avatar_url} name={c.display_name} className="h-10 w-10 ring-2 ring-card" />)}
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">
-            {post.author?.display_name} <Verified show={post.author?.is_verified} />
+            <Link to="/u/$username" params={{ username: post.author?.username ?? "" }}>{post.author?.display_name}</Link> <Verified show={post.author?.is_verified} />
+            {collabs.map((c, i) => (
+              <span key={c.id}>{i === collabs.length - 1 ? " e " : ", "}<Link to="/u/$username" params={{ username: c.username }}>{c.display_name}</Link> <Verified show={c.is_verified} /></span>
+            ))}
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="truncate text-xs text-muted-foreground">
             {isBoosted(post) ? <span className="mr-1 inline-flex items-center gap-0.5 text-melon"><Flame className="h-3 w-3" />Turbmels ·</span> : null}
-            @{post.author?.username} · {formatDistanceToNow(new Date(post.created_at), { locale: ptBR })}
+            @{post.author?.username}{collabs.map((c) => ` · @${c.username}`).join("")} · {formatDistanceToNow(new Date(post.created_at), { locale: ptBR })}
           </p>
-        </Link>
+        </div>
+        <Reposters list={reposts} />
         {canDelete && (
           <DropdownMenu>
             <DropdownMenuTrigger aria-label="Opções" className="rounded-full p-2 hover:bg-secondary"><MoreHorizontal className="h-5 w-5" /></DropdownMenuTrigger>
@@ -294,7 +369,6 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
         </a>
       )}
       <div className="space-y-3 px-4 py-3">
-        {!!post.collaborators?.length && <Collabs ids={post.collaborators} />}
         {post.content && <Content text={post.content} />}
         {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
@@ -304,13 +378,16 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
           <button onClick={() => setShowComments((s) => !s)} className="flex items-center gap-1.5" aria-label="Comentários">
             <MessageCircle className="h-6 w-6" /> <span className="text-sm">{post.comments[0]?.count ?? 0}</span>
           </button>
+          <button onClick={toggleRepost} className={`flex items-center gap-1.5 ${reposted ? "text-rind" : ""}`} aria-label="Republicar">
+            <Repeat2 className="h-6 w-6" /> <span className="text-sm">{reposts.length}</span>
+          </button>
           <button onClick={() => shareLink(`/p/${post.id}`, `Publicação de @${post.author?.username} na Melan`)} className="flex items-center gap-1.5" aria-label="Compartilhar">
             <Share2 className="h-6 w-6" />
           </button>
           <span className="ml-auto flex items-center gap-1.5 text-sm" aria-label="Visualizações"><Eye className="h-5 w-5" />{post.view_count ?? 0}</span>
         </div>
       </div>
-      {showComments && <Comments postId={post.id} />}
+      {showComments && <Comments postId={post.id} postAuthorId={post.author_id} />}
     </article>
   );
 }

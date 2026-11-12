@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutList, Smartphone } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { PostCard, POST_SELECT, type FeedPost } from "@/components/melan/PostCard";
@@ -28,9 +28,10 @@ function Feed() {
     queryKey: ["posts", "signals", user?.id],
     enabled: !!user,
     queryFn: async (): Promise<Signals> => {
-      const [f, l] = await Promise.all([
+      const [f, l, v] = await Promise.all([
         supabase.from("follows").select("following_id").eq("follower_id", user!.id),
         supabase.from("likes").select("post:posts(author_id,hashtags)").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(200),
+        supabase.from("post_views").select("post_id").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(2000),
       ]);
       const likedAuthors = new Map<string, number>();
       const likedTags = new Map<string, number>();
@@ -39,7 +40,7 @@ function Feed() {
         likedAuthors.set(row.post.author_id, (likedAuthors.get(row.post.author_id) ?? 0) + 1);
         for (const t of row.post.hashtags) likedTags.set(t.toLowerCase(), (likedTags.get(t.toLowerCase()) ?? 0) + 1);
       }
-      return { followed: new Set((f.data ?? []).map((x) => x.following_id)), likedAuthors, likedTags, interests: new Set((profile?.interests ?? []).map((i) => i.toLowerCase())) };
+      return { followed: new Set((f.data ?? []).map((x) => x.following_id)), likedAuthors, likedTags, interests: new Set((profile?.interests ?? []).map((i) => i.toLowerCase())), seen: new Set((v.data ?? []).map((x) => x.post_id)) };
     },
   });
 
@@ -53,7 +54,18 @@ function Feed() {
       return data as unknown as FeedPost[];
     },
   });
-  const ranked = signals.data ? rankFeed(posts.data ?? [], signals.data) : posts.data ?? [];
+  // Seen set is frozen per visit so posts don't jump around while you scroll.
+  const [seenAtOpen, setSeenAtOpen] = useState<Set<string> | null>(null);
+  useEffect(() => { if (signals.data && !seenAtOpen) setSeenAtOpen(signals.data.seen ?? new Set()); }, [signals.data, seenAtOpen]);
+  const ranked = useMemo(() => {
+    if (!signals.data) return posts.data ?? [];
+    const repostedByFollowed = new Map<string, number>();
+    for (const p of posts.data ?? []) {
+      const n = (p.reposts ?? []).filter((r) => signals.data!.followed.has(r.user_id)).length;
+      if (n) repostedByFollowed.set(p.id, n);
+    }
+    return rankFeed(posts.data ?? [], { ...signals.data, seen: seenAtOpen ?? signals.data.seen, repostedByFollowed });
+  }, [posts.data, signals.data, seenAtOpen]);
 
   return (
     <AppShell>

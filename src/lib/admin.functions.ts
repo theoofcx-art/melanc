@@ -43,7 +43,7 @@ export const adminBoostPost = createServerFn({ method: "POST" })
 
 export const adminGiveFrame = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), frame: z.enum(["natal", "nyan"]), give: z.boolean() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), frame: z.enum(["natal", "melancia", "nyan", "nuvem"]), give: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -47,7 +47,7 @@ function Create() {
     }
     setBusy(true);
     try {
-      const names = [...new Set(collabInput.split(/[\s,]+/).map((n) => n.replace(/^@/, "").toLowerCase()).filter(Boolean))].slice(0, 3);
+      const names = [...new Set(collabInput.split(/[\s,]+/).map((n) => n.replace(/^@/, "").toLowerCase()).filter(Boolean))].slice(0, 5);
       let collaborators: string[] = [];
       if (names.length) {
         const { data } = await supabase.from("profiles").select("id,username").in("username", names);
@@ -72,9 +72,13 @@ function Create() {
         spotify_url: spotify || null,
         link_url: linkUrl,
         filter: filter === "none" ? null : filter,
-        collaborators,
       }).select("id").single();
       if (error) throw error;
+      if (collaborators.length) {
+        const { error: ie } = await supabase.from("collab_invites").insert(collaborators.map((uid) => ({ post_id: data.id, user_id: uid })));
+        if (ie) toast.error(ie.message);
+        else toast("Convites de colab enviados — aparece quando aceitarem");
+      }
       qc.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Publicado! 🍉");
       setBoostFor(data.id);
@@ -110,7 +114,7 @@ function Create() {
         {showSpotify && <input value={spotify} onChange={(e) => setSpotify(e.target.value)} placeholder="Cole o link de uma música do Spotify" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
         {spotifyEmbedUrl(spotify) && <iframe title="Spotify" src={spotifyEmbedUrl(spotify)!} className="h-20 w-full rounded-xl" />}
         {showLink && <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link do botão “Saiba mais” (ex: seusite.com)" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
-        {showCollab && <input value={collabInput} onChange={(e) => setCollabInput(e.target.value)} placeholder="Colab: @usuario1 @usuario2 (até 3)" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
+        {showCollab && <input value={collabInput} onChange={(e) => setCollabInput(e.target.value)} placeholder="Colab: @usuario1 @usuario2 (até 5)" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
         <div className="flex flex-wrap gap-2">
           <label className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm">
             <ImagePlus className="h-4 w-4" /> Fotos / vídeos
