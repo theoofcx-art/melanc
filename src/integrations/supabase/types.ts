@@ -216,6 +216,39 @@ export type Database = {
           },
         ]
       }
+      post_views: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
@@ -279,6 +312,7 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string
+          frame: string | null
           id: string
           interests: string[]
           is_private: boolean
@@ -293,6 +327,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
+          frame?: string | null
           id: string
           interests?: string[]
           is_private?: boolean
@@ -307,6 +342,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string
+          frame?: string | null
           id?: string
           interests?: string[]
           is_private?: boolean
@@ -316,6 +352,107 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      status_likes: {
+        Row: {
+          created_at: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_likes_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_views: {
+        Row: {
+          created_at: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_views_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "status_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statuses: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          media_path: string | null
+          media_type: string
+        }
+        Insert: {
+          author_id: string
+          content?: string
+          created_at?: string
+          id?: string
+          media_path?: string | null
+          media_type?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          media_path?: string | null
+          media_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statuses_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stickers: {
         Row: {
@@ -340,6 +477,32 @@ export type Database = {
           {
             foreignKeyName: "stickers_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_frames: {
+        Row: {
+          created_at: string
+          frame: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          frame: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          frame?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_frames_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

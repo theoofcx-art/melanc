@@ -25,4 +25,8 @@ describe("feed", () => {
     expect(url.startsWith("https://wa.me/5519996591186")).toBe(true);
     expect(decodeURIComponent(url)).toContain("R$ 6,00");
   });
+  it("gives verified accounts more visibility", () => {
+    const posts = [{ ...base, id: "a", author_id: "x" }, { ...base, id: "v", author_id: "y", author: { is_verified: true } }];
+    expect(rankFeed(posts, empty, now)[0].id).toBe("v");
+  });
 });

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Flame, Heart, MessageCircle, MoreHorizontal, Trash2, Send } from "lucide-react";
+import { ExternalLink, Eye, Flame, Heart, MessageCircle, MoreHorizontal, Trash2, Send, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { useMediaUrl } from "@/lib/media";
 import { spotifyEmbedUrl } from "@/lib/hashtags";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FILTERS, isBoosted } from "@/lib/feed";
+import { shareLink } from "@/lib/share";
 import { UserAvatar, Verified } from "./Avatar";
 import { Sticker, StickerPicker } from "./Stickers";
 
@@ -29,13 +30,14 @@ export type FeedPost = {
   collaborators?: string[];
   boosted_until?: string | null;
   created_at: string;
-  author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean } | null;
+  author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean; frame?: string | null } | null;
+  post_views?: { count: number }[];
   likes: { user_id: string }[];
   comments: { count: number }[];
 };
 
 export const POST_SELECT =
-  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified), likes(user_id), comments(count)";
+  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), comments(count), post_views(count)";
 
 function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
@@ -215,6 +217,21 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
   const likeCount = post.likes.length + (optimistic === null ? 0 : optimistic === liked ? 0 : optimistic ? 1 : -1);
   const embed = spotifyEmbedUrl(post.spotify_url);
   const canDelete = user && (user.id === post.author_id || isAdmin);
+  const card = useRef<HTMLElement>(null);
+  const [viewed, setViewed] = useState(false);
+  // Counts one view per person: the database keeps only one row per post and user.
+  useEffect(() => {
+    const el = card.current;
+    if (!el || !user || viewed) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      setViewed(true);
+      supabase.from("post_views").upsert({ post_id: post.id, user_id: user.id }, { onConflict: "post_id,user_id", ignoreDuplicates: true }).then(() => {});
+    }, { threshold: 0.5 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [user, post.id, viewed]);
 
   const toggleLike = async () => {
     if (!user) return toast("Entre para curtir");
@@ -233,9 +250,9 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
   };
 
   return (
-    <article className={`overflow-hidden bg-card ${vertical ? "snap-start rounded-3xl" : "rounded-3xl"}`}>
+    <article ref={card} className={`overflow-hidden bg-card ${vertical ? "snap-start rounded-3xl" : "rounded-3xl"}`}>
       <div className="flex items-center gap-3 px-4 py-3">
-        <UserAvatar path={post.author?.avatar_url} name={post.author?.display_name} />
+        <UserAvatar path={post.author?.avatar_url} name={post.author?.display_name} frame={post.author?.frame} />
         <Link to="/u/$username" params={{ username: post.author?.username ?? "" }} className="min-w-0 flex-1">
           <p className="truncate font-semibold">
             {post.author?.display_name} <Verified show={post.author?.is_verified} />
@@ -286,6 +303,10 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
           <button onClick={() => setShowComments((s) => !s)} className="flex items-center gap-1.5" aria-label="Comentários">
             <MessageCircle className="h-6 w-6" /> <span className="text-sm">{post.comments[0]?.count ?? 0}</span>
           </button>
+          <button onClick={() => shareLink(`/p/${post.id}`, `Publicação de @${post.author?.username} na Melan`)} className="flex items-center gap-1.5" aria-label="Compartilhar">
+            <Share2 className="h-6 w-6" />
+          </button>
+          <span className="ml-auto flex items-center gap-1.5 text-sm" aria-label="Visualizações"><Eye className="h-5 w-5" />{post.post_views?.[0]?.count ?? 0}</span>
         </div>
       </div>
       {showComments && <Comments postId={post.id} />}

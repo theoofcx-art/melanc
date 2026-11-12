@@ -22,6 +22,13 @@
       "when": 1793407283581,
       "tag": "0002_posts_boost_link_filter_collab",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794479947929,
+      "tag": "0003_views_status_frames",
+      "breakpoints": true
     }
   ]
 }

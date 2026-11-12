@@ -3,6 +3,9 @@ export const BOOST_WHATSAPP = "5519996591186";
 /** A boosted post is repeated in the feed every N slots. */
 export const BOOST_REPEAT_EVERY = 5;
 
+/** Verified accounts get extra reach in the feed. */
+export const VERIFIED_BONUS = 4;
+
 export type Signals = {
   followed: Set<string>;
   likedAuthors: Map<string, number>;
@@ -10,7 +13,7 @@ export type Signals = {
   interests: Set<string>;
 };
 
-type P = { id: string; author_id: string; hashtags: string[]; created_at: string; boosted_until?: string | null; likes: unknown[] };
+type P = { id: string; author_id: string; author?: { is_verified?: boolean } | null; hashtags: string[]; created_at: string; boosted_until?: string | null; likes: unknown[] };
 
 export function isBoosted(p: { boosted_until?: string | null }, now = Date.now()) {
   return !!p.boosted_until && new Date(p.boosted_until).getTime() > now;
@@ -26,6 +29,7 @@ export function scorePost(p: P, s: Signals, now = Date.now()) {
     score += Math.min(s.likedTags.get(tag) ?? 0, 5);
     if (s.interests.has(tag)) score += 2;
   }
+  if (p.author?.is_verified) score += VERIFIED_BONUS;
   score += Math.log2(1 + p.likes.length);
   const hours = (now - new Date(p.created_at).getTime()) / 36e5;
   score -= hours / 12;

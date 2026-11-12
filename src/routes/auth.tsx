@@ -50,7 +50,7 @@ function AuthPage() {
       password: parsed.data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/feed`,
-        data: { display_name: parsed.data.display_name, username: parsed.data.username, bio: parsed.data.bio },
+        data: { display_name: parsed.data.display_name, username: parsed.data.username, bio: parsed.data.bio, ref: localStorage.getItem("melan-ref") ?? "" },
       },
     });
     setBusy(false);
