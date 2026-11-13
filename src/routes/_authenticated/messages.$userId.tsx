@@ -62,7 +62,7 @@ function Chat() {
           const mine = m.sender_id === user?.id;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              {m.sticker ? <Sticker value={m.sticker} /> : <p className={`max-w-[75%] rounded-3xl px-4 py-2 text-sm ${mine ? "bg-primary" : "bg-card"}`}>{m.content}</p>}
+              {m.sticker ? <Sticker value={m.sticker} saveable={!mine} /> : <p className={`max-w-[75%] rounded-3xl px-4 py-2 text-sm ${mine ? "bg-primary" : "bg-card"}`}>{m.content}</p>}
             </div>
           );
         })}

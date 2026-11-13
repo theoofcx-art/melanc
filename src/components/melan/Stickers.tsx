@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Smile, Upload } from "lucide-react";
+import { Download, Smile, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,11 +10,30 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export const BUILTIN_STICKERS = ["🍉", "🦇", "🎃", "👻", "🕸️", "🍬", "💀", "🌙", "🖤", "💚", "✨", "🫶", "😭", "🔥", "😈", "🍭"];
 
 /** Sticker value format: "emoji:🍉" or "img:<storage path>" */
-export function Sticker({ value, className = "h-24 w-24" }: { value: string; className?: string }) {
+export function Sticker({ value, className = "h-24 w-24", saveable = false }: { value: string; className?: string; saveable?: boolean }) {
   const isImg = value.startsWith("img:");
   const url = useMediaUrl(isImg ? value.slice(4) : null);
+  const { user } = useMe();
+  const qc = useQueryClient();
   if (!isImg) return <span className="text-6xl leading-none">{value.replace(/^emoji:/, "")}</span>;
-  return url ? <img src={url} alt="figurinha" className={`${className} object-contain`} /> : <div className={className} />;
+  const path = value.slice(4);
+  const save = async () => {
+    if (!user) return;
+    const { data: has } = await supabase.from("stickers").select("id").eq("owner_id", user.id).eq("path", path).maybeSingle();
+    if (has) return toast("Essa figurinha já está salva");
+    const { error } = await supabase.from("stickers").insert({ owner_id: user.id, path });
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["stickers"] });
+    toast.success("Figurinha salva! 💚");
+  };
+  const img = url ? <img src={url} alt="figurinha" className={`${className} object-contain`} /> : <div className={className} />;
+  if (!saveable) return img;
+  return (
+    <span className="inline-flex flex-col items-start gap-1">
+      {img}
+      <button type="button" onClick={save} className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px]"><Download className="h-3 w-3" /> Salvar figurinha</button>
+    </span>
+  );
 }
 
 function CustomThumb({ path, onPick }: { path: string; onPick: () => void }) {

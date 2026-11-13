@@ -15,6 +15,7 @@ import { FILTERS, isBoosted } from "@/lib/feed";
 import { shareLink } from "@/lib/share";
 import { UserAvatar, Verified } from "./Avatar";
 import { Sticker, StickerPicker } from "./Stickers";
+import { RichText } from "./RichText";
 
 export type FeedPost = {
   id: string;
@@ -25,6 +26,7 @@ export type FeedPost = {
   media_types: string[];
   hashtags: string[];
   spotify_url: string | null;
+  sticker?: string | null;
   link_url?: string | null;
   filter?: string | null;
   collaborators?: string[];
@@ -125,19 +127,7 @@ function AutoSpotify({ url }: { url: string }) {
 }
 
 function Content({ text }: { text: string }) {
-  return (
-    <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-      {text.split(/(#[\p{L}\p{N}_]+)/u).map((part, i) =>
-        part.startsWith("#") ? (
-          <Link key={i} to="/communities" search={{ tag: part.slice(1).toLowerCase() }} className="font-medium text-rind">
-            {part}
-          </Link>
-        ) : (
-          part
-        ),
-      )}
-    </p>
-  );
+  return <RichText text={text} className="text-[15px] leading-relaxed" />;
 }
 
 type CommentRow = {
@@ -201,7 +191,7 @@ function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: stri
             <Link to="/u/$username" params={{ username: c.author?.username ?? "" }} className="font-semibold text-foreground">@{c.author?.username}</Link>{" "}
             <Verified show={c.author?.is_verified} className="h-3 w-3" />
           </p>
-          {c.sticker ? <Sticker value={c.sticker} className="h-20 w-20" /> : <p className="text-sm break-words">{c.content}</p>}
+          {c.sticker ? <Sticker value={c.sticker} className="h-20 w-20" saveable /> : <RichText text={c.content ?? ""} className="text-sm" />}
           <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
             <button onClick={() => { setReplyTo(c); setText(`@${c.author?.username} `); }} className="flex items-center gap-1"><Reply className="h-3.5 w-3.5" />Responder</button>
             {isOwner && !reply && <button onClick={() => pin(c)} className="flex items-center gap-1"><Pin className="h-3.5 w-3.5" />{c.pinned ? "Desafixar" : "Fixar"}</button>}
@@ -370,6 +360,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
       )}
       <div className="space-y-3 px-4 py-3">
         {post.content && <Content text={post.content} />}
+        {post.sticker && <Sticker value={post.sticker} className="h-32 w-32" saveable />}
         {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">

@@ -1,7 +1,8 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, Flame, Trash2, UserX } from "lucide-react";
+import { BadgeCheck, Flame, Frame, Trash2, UserX } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ function Admin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"users" | "posts">("users");
   const [q, setQ] = useState("");
+  const [frameFor, setFrameFor] = useState<{ id: string; username: string } | null>(null);
   const del = useServerFn(adminDeleteUser);
   const verify = useServerFn(adminSetVerified);
   const boost = useServerFn(adminBoostPost);
@@ -67,10 +69,7 @@ function Admin() {
             <UserAvatar path={u.avatar_url} name={u.display_name} />
             <div className="min-w-0 flex-1"><p className="truncate font-semibold">{u.display_name} <Verified show={u.is_verified} /></p><p className="text-xs text-muted-foreground">@{u.username}</p></div>
             <button aria-label="Verificar" onClick={() => run(() => verify({ data: { userId: u.id, verified: !u.is_verified } }), u.is_verified ? "Selo removido" : "Selo concedido")} className={`rounded-full p-2 ${u.is_verified ? "bg-verified" : "bg-secondary"}`}><BadgeCheck className="h-4 w-4" /></button>
-            {(Object.keys(FRAMES) as FrameKey[]).filter((k) => !FRAMES[k].free).map((k) => {
-              const has = frames.data?.some((r) => r.user_id === u.id && r.frame === k);
-              return <button key={k} aria-label={`Moldura ${FRAMES[k].label}`} onClick={() => run(() => giveFrame({ data: { userId: u.id, frame: k, give: !has } }), has ? "Moldura retirada" : "Moldura dada")} className={`rounded-full p-0.5 ${has ? "bg-melon" : "bg-secondary"}`}><img src={FRAMES[k].url} alt="" className="h-7 w-7" /></button>;
-            })}
+            <button aria-label="Molduras" onClick={() => setFrameFor(u)} className="rounded-full bg-secondary p-2"><Frame className="h-4 w-4" /></button>
             {u.id !== user?.id && (
               <button aria-label="Banir" onClick={() => confirm(`Banir e excluir @${u.username} permanentemente?`) && run(() => del({ data: { userId: u.id } }), "Conta excluída")} className="rounded-full bg-destructive p-2"><UserX className="h-4 w-4" /></button>
             )}
@@ -83,6 +82,23 @@ function Admin() {
           </div>
         ))}
       </div>
+      <Dialog open={!!frameFor} onOpenChange={(o) => !o && setFrameFor(null)}>
+        <DialogContent className="max-h-[85vh] max-w-sm overflow-y-auto rounded-3xl">
+          <DialogTitle>Molduras de @{frameFor?.username}</DialogTitle>
+          <p className="text-xs text-muted-foreground">Toque para dar ou tirar.</p>
+          <div className="grid grid-cols-3 gap-3">
+            {(Object.keys(FRAMES) as FrameKey[]).map((k) => {
+              const has = frames.data?.some((r) => r.user_id === frameFor?.id && r.frame === k);
+              return (
+                <button key={k} onClick={() => frameFor && run(() => giveFrame({ data: { userId: frameFor.id, frame: k, give: !has } }), has ? "Moldura retirada" : "Moldura dada")} className={`flex flex-col items-center gap-1 rounded-2xl p-2 ${has ? "bg-melon text-primary-foreground" : "bg-secondary"}`}>
+                  <img src={FRAMES[k].url} alt="" className="h-14 w-14" />
+                  <span className="text-[11px]">{FRAMES[k].label}{has ? " ✓" : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

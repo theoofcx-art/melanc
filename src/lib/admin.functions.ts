@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { FRAME_KEYS } from "@/lib/frames";
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -43,7 +44,7 @@ export const adminBoostPost = createServerFn({ method: "POST" })
 
 export const adminGiveFrame = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), frame: z.enum(["natal", "melancia", "nyan", "nuvem"]), give: z.boolean() }).parse(d))
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), frame: z.enum(FRAME_KEYS as [string, ...string[]]), give: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

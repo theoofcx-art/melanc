@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: Notifs,
 });
 
-const label: Record<string, string> = { like: "curtiu sua publicação ❤️", comment: "comentou na sua publicação", follow: "começou a seguir você 🍉", collab_invite: "convidou você para ser colaborador de uma publicação", collab_accepted: "aceitou ser colaborador da sua publicação 🤝" };
+const label: Record<string, string> = { like: "curtiu sua publicação ❤️", comment: "comentou na sua publicação", follow: "começou a seguir você 🍉", collab_invite: "convidou você para ser colaborador de uma publicação", collab_accepted: "aceitou ser colaborador da sua publicação 🤝", mention: "marcou você numa publicação ou comentário" };
 
 function Notifs() {
   const qc = useQueryClient();

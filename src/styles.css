@@ -130,3 +130,16 @@
   border: 1px solid oklch(1 0 0 / 10%);
   box-shadow: inset 0 1px 0 oklch(1 0 0 / 12%), var(--shadow-float);
 }
+
+/* Aura colors for representative profile tags */
+:root {
+  --aura-vampiro: oklch(0.6 0.22 25);
+  --aura-pomba: oklch(0.95 0.01 240);
+  --aura-folha: oklch(0.72 0.18 145);
+  --aura-olhos: oklch(0.7 0.16 300);
+}
+.aura-vampiro { --aura: var(--aura-vampiro); }
+.aura-pomba { --aura: var(--aura-pomba); }
+.aura-folha { --aura: var(--aura-folha); }
+.aura-olhos { --aura: var(--aura-olhos); }
+.aura-ring { box-shadow: 0 0 0 2px var(--aura), 0 0 18px 2px var(--aura); }

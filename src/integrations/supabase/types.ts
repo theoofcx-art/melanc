@@ -346,6 +346,7 @@ export type Database = {
           media_types: string[]
           media_urls: string[]
           spotify_url: string | null
+          sticker: string | null
           view_count: number
         }
         Insert: {
@@ -362,6 +363,7 @@ export type Database = {
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
+          sticker?: string | null
           view_count?: number
         }
         Update: {
@@ -378,6 +380,7 @@ export type Database = {
           media_types?: string[]
           media_urls?: string[]
           spotify_url?: string | null
+          sticker?: string | null
           view_count?: number
         }
         Relationships: [
@@ -393,6 +396,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          badge: string | null
           banner_url: string | null
           bio: string | null
           created_at: string
@@ -408,6 +412,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          badge?: string | null
           banner_url?: string | null
           bio?: string | null
           created_at?: string
@@ -423,6 +428,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          badge?: string | null
           banner_url?: string | null
           bio?: string | null
           created_at?: string
@@ -690,6 +696,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      invite_collabs: {
+        Args: { _post_id: string; _usernames: string[] }
+        Returns: number
       }
     }
     Enums: {

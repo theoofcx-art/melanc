@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FRAMES, availableFrames, type FrameKey } from "@/lib/frames";
+import { BADGES, FRAMES, availableFrames, type BadgeKey, type FrameKey } from "@/lib/frames";
 import { shareLink } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ function Edit() {
   });
   const can = availableFrames(owned.data ?? [], followers.data ?? 0);
   const [refName, setRefName] = useState("");
+  const [allFrames, setAllFrames] = useState(false);
   const claim = async () => {
     const { data, error } = await supabase.rpc("claim_referral", { _ref: refName });
     if (error) return toast.error(error.message);
@@ -52,6 +53,13 @@ function Edit() {
     if (error) return toast.error(error.message);
     qc.invalidateQueries();
     toast.success(key ? `Moldura ${FRAMES[key].label} aplicada` : "Moldura removida");
+  };
+
+  const setBadge = async (key: BadgeKey | null) => {
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ badge: key }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries();
   };
 
   const up = async (file: File, key: "avatar_url" | "banner_url") => {
@@ -96,13 +104,24 @@ function Edit() {
         </div>
         <button onClick={save} className="h-12 w-full rounded-full bg-melon font-semibold text-primary-foreground">Salvar</button>
         <section className="space-y-3 rounded-3xl bg-card p-4">
+          <h2 className="font-display text-xl font-bold">Etiqueta</h2>
+          <p className="text-xs text-muted-foreground">Aparece em cima da sua bio.</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(Object.keys(BADGES) as BadgeKey[]).map((k) => (
+              <button key={k} onClick={() => setBadge(profile?.badge === k ? null : k)} className={`${BADGES[k].aura} flex items-center gap-2 rounded-2xl bg-secondary p-3 text-left text-xs ${profile?.badge === k ? "aura-ring" : ""}`}>
+                <span className="text-2xl">{BADGES[k].emoji}</span>{BADGES[k].label}
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="space-y-3 rounded-3xl bg-card p-4">
           <h2 className="font-display text-xl font-bold">Molduras</h2>
           <div className="grid grid-cols-3 gap-3">
             <button onClick={() => wear(null)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${!profile?.frame ? "bg-primary" : "bg-secondary"}`}>
               <UserAvatar path={f.avatar_url} name={f.display_name} className="h-14 w-14" />
               <span className="text-xs">Sem moldura</span>
             </button>
-            {(Object.keys(FRAMES) as FrameKey[]).map((k) => {
+            {(Object.keys(FRAMES) as FrameKey[]).slice(0, allFrames ? undefined : 2).map((k) => {
               const ok = can.includes(k);
               return (
                 <button key={k} disabled={!ok} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile?.frame === k ? "bg-primary" : "bg-secondary"} ${ok ? "" : "opacity-50"}`}>
@@ -113,6 +132,7 @@ function Edit() {
               );
             })}
           </div>
+          <button onClick={() => setAllFrames((v) => !v)} className="h-10 w-full rounded-full bg-secondary text-sm">{allFrames ? "Ver menos" : "Ver mais"}</button>
           <button onClick={() => profile && shareLink(`/convite/${profile.username}`, "Entre na Melan comigo 🍉")} className="h-11 w-full rounded-full bg-melon text-sm font-semibold text-primary-foreground">Convidar amigo e ganhar a moldura Arco-íris</button>
           <p className="text-center text-xs text-muted-foreground">Quando alguém criar conta pelo seu link, vocês dois ganham a moldura.</p>
           {!owned.data?.includes("nyan") && (

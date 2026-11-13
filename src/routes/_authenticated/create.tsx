@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { useMe } from "@/lib/auth";
+import { Sticker, StickerPicker } from "@/components/melan/Stickers";
 import { uploadMedia } from "@/lib/media";
 import { extractHashtags, spotifyEmbedUrl } from "@/lib/hashtags";
 import { BOOST_PRICE_PER_DAY, FILTERS, boostWhatsAppUrl } from "@/lib/feed";
@@ -28,13 +29,14 @@ function Create() {
   const [filter, setFilter] = useState("none");
   const [collabInput, setCollabInput] = useState("");
   const [showCollab, setShowCollab] = useState(false);
+  const [sticker, setSticker] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [boostFor, setBoostFor] = useState<string | null>(null);
   const [days, setDays] = useState(1);
 
   const publish = async () => {
     if (!user) return;
-    if (!text.trim() && files.length === 0) return toast.error("Escreva algo ou adicione mídia");
+    if (!text.trim() && files.length === 0 && !sticker) return toast.error("Escreva algo, adicione mídia ou uma figurinha");
     if (spotify && !spotifyEmbedUrl(spotify)) return toast.error("Link do Spotify inválido");
     let linkUrl: string | null = null;
     if (link.trim()) {
@@ -48,12 +50,10 @@ function Create() {
     setBusy(true);
     try {
       const names = [...new Set(collabInput.split(/[\s,]+/).map((n) => n.replace(/^@/, "").toLowerCase()).filter(Boolean))].slice(0, 5);
-      let collaborators: string[] = [];
       if (names.length) {
         const { data } = await supabase.from("profiles").select("id,username").in("username", names);
         const missing = names.filter((n) => !data?.some((d) => d.username.toLowerCase() === n));
         if (missing.length) throw new Error(`Usuário não encontrado: @${missing.join(", @")}`);
-        collaborators = (data ?? []).map((d) => d.id).filter((id) => id !== user.id);
       }
       const paths: string[] = [];
       const types: string[] = [];
@@ -72,10 +72,11 @@ function Create() {
         spotify_url: spotify || null,
         link_url: linkUrl,
         filter: filter === "none" ? null : filter,
+        sticker,
       }).select("id").single();
       if (error) throw error;
-      if (collaborators.length) {
-        const { error: ie } = await supabase.from("collab_invites").insert(collaborators.map((uid) => ({ post_id: data.id, user_id: uid })));
+      if (names.length) {
+        const { error: ie } = await supabase.rpc("invite_collabs", { _post_id: data.id, _usernames: names });
         if (ie) toast.error(ie.message);
         else toast("Convites de colab enviados — aparece quando aceitarem");
       }
@@ -94,6 +95,12 @@ function Create() {
       <div className="space-y-4 px-4">
         <h1 className="font-display text-2xl font-bold">Nova publicação</h1>
         <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={3000} placeholder="O que está acontecendo? Use #hashtags…" className="min-h-36 w-full rounded-3xl bg-card p-4 outline-none" />
+        {sticker && (
+          <div className="relative w-fit">
+            <Sticker value={sticker} className="h-28 w-28" />
+            <button aria-label="Tirar figurinha" onClick={() => setSticker(null)} className="absolute -right-2 -top-2 rounded-full bg-secondary p-1"><X className="h-3 w-3" /></button>
+          </div>
+        )}
         {files.length > 0 && (
           <>
             <div className="no-scrollbar flex gap-2 overflow-x-auto">
@@ -122,6 +129,7 @@ function Create() {
           </label>
           <button onClick={() => setShowSpotify((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Music className="h-4 w-4" /> Spotify</button>
           <button onClick={() => setShowLink((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Link2 className="h-4 w-4" /> Link</button>
+          <StickerPicker onPick={setSticker} />
           <button onClick={() => setShowCollab((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Users className="h-4 w-4" /> Colab</button>
         </div>
         <button disabled={busy} onClick={publish} className="h-12 w-full rounded-full bg-melon font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Publicando…" : "Publicar"}</button>

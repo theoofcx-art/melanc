@@ -43,6 +43,13 @@
       "when": 1794525361556,
       "tag": "0005_reposts_collab_invites_comment_replies_frames",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794581009236,
+      "tag": "0006_badges_mentions_frames_collab_rpc",
+      "breakpoints": true
     }
   ]
 }

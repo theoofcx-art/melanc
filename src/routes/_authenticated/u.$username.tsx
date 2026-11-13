@@ -10,6 +10,8 @@ import { PostCard, POST_SELECT, type FeedPost } from "@/components/melan/PostCar
 import { useMe, type Profile } from "@/lib/auth";
 import { useMediaUrl } from "@/lib/media";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { RichText } from "@/components/melan/RichText";
+import { BADGES, type BadgeKey } from "@/lib/frames";
 
 export const Route = createFileRoute("/_authenticated/u/$username")({
   head: ({ params }) => ({ meta: [{ title: `@${params.username} — Melan` }, { name: "description", content: `Perfil de @${params.username} no Melan.` }] }),
@@ -33,6 +35,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"media" | "video" | "text">("media");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [list, setList] = useState<"followers" | "following" | null>(null);
   const uname = username === "me" ? me?.username : username;
 
   const prof = useQuery({
@@ -51,15 +54,13 @@ function ProfilePage() {
     enabled: !!p,
     queryFn: async () => {
       const [followers, following, posts] = await Promise.all([
-        supabase.from("follows").select("follower_id, follower:profiles!follows_follower_id_fkey(avatar_url,display_name)").eq("following_id", p!.id),
-        supabase.from("follows").select("following_id").eq("follower_id", p!.id),
+        supabase.from("follows").select("follower_id, follower:profiles!follows_follower_id_fkey(username,display_name,avatar_url,is_verified)").eq("following_id", p!.id),
+        supabase.from("follows").select("following_id, following:profiles!follows_following_id_fkey(username,display_name,avatar_url,is_verified)").eq("follower_id", p!.id),
         supabase.from("posts").select(POST_SELECT).or(`author_id.eq.${p!.id},collaborators.cs.{${p!.id}}`).order("created_at", { ascending: false }),
       ]);
-      const fs = new Set((following.data ?? []).map((f) => f.following_id));
-      const connections = (followers.data ?? []).filter((f) => fs.has(f.follower_id)).length;
       const postsData = (posts.data ?? []) as unknown as FeedPost[];
       const hearts = postsData.reduce((n, x) => n + x.likes.length, 0);
-      return { followers: followers.data ?? [], connections, hearts, posts: postsData, amFollowing: (followers.data ?? []).some((f) => f.follower_id === user?.id) };
+      return { followers: followers.data ?? [], following: following.data ?? [], hearts, posts: postsData, amFollowing: (followers.data ?? []).some((f) => f.follower_id === user?.id) };
     },
   });
   const banner = useMediaUrl(p?.banner_url);
@@ -102,7 +103,12 @@ function ProfilePage() {
               </div>
             </div>
           </div>
-          {p.bio && <p className="mt-4 text-sm">{p.bio}</p>}
+          {p.badge && p.badge in BADGES && (
+            <span className={`${BADGES[p.badge as BadgeKey].aura} aura-ring mt-4 inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-sm`}>
+              <span className="text-lg">{BADGES[p.badge as BadgeKey].emoji}</span>{BADGES[p.badge as BadgeKey].label}
+            </span>
+          )}
+          {p.bio && <RichText text={p.bio} className="mt-4 text-sm" />}
           <div className="mt-4 flex items-center justify-between gap-3">
             {p.link ? (
               <a href={p.link.startsWith("http") ? p.link : `https://${p.link}`} target="_blank" rel="noreferrer noopener" className="flex items-center gap-2 truncate text-lg"><Link2 className="h-5 w-5" />{p.link.replace(/^https?:\/\//, "")}</a>
@@ -118,14 +124,14 @@ function ProfilePage() {
             )}
           </div>
           <div className="mt-8 grid grid-cols-3 text-center">
-            <Stat n={s?.connections ?? 0} label="Conexões" />
-            <div className="flex flex-col items-center gap-2">
+            <button onClick={() => setList("following")}><Stat n={s?.following.length ?? 0} label="Seguindo" /></button>
+            <button onClick={() => setList("followers")} className="flex flex-col items-center gap-2">
               <div className="flex items-center -space-x-3">
                 {(s?.followers ?? []).slice(0, 3).map((f) => <UserAvatar key={f.follower_id} path={f.follower?.avatar_url} name={f.follower?.display_name} className="h-12 w-12 ring-2 ring-background" />)}
                 <span className="flex h-12 min-w-12 items-center justify-center rounded-full bg-secondary px-3 text-xl font-semibold">{s?.followers.length ?? 0}</span>
               </div>
               <span className="text-base">Seguidores</span>
-            </div>
+            </button>
             <Stat n={s?.hearts ?? 0} label="Corações" />
           </div>
           {isMe && (
@@ -151,6 +157,20 @@ function ProfilePage() {
           ) : (
             <div className="mt-3 grid grid-cols-3 gap-1 px-1">{shown.map((x) => <Thumb key={x.id} post={x} onOpen={() => setOpenId(x.id)} />)}</div>
           )}
+          <Dialog open={!!list} onOpenChange={(o) => !o && setList(null)}>
+            <DialogContent className="max-h-[80vh] max-w-sm overflow-y-auto rounded-3xl">
+              <DialogTitle>{list === "followers" ? "Seguidores" : "Seguindo"}</DialogTitle>
+              <div className="space-y-2">
+                {(list === "followers" ? (s?.followers ?? []).map((f) => f.follower) : (s?.following ?? []).map((f) => f.following)).filter(Boolean).map((u) => (
+                  <Link key={u!.username} to="/u/$username" params={{ username: u!.username }} onClick={() => setList(null)} className="flex items-center gap-3 rounded-2xl p-2 hover:bg-secondary">
+                    <UserAvatar path={u!.avatar_url} name={u!.display_name} />
+                    <div className="min-w-0"><p className="truncate font-semibold">{u!.display_name} <Verified show={u!.is_verified} /></p><p className="text-xs text-muted-foreground">@{u!.username}</p></div>
+                  </Link>
+                ))}
+                {(list === "followers" ? s?.followers.length : s?.following.length) === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Ninguém por aqui ainda</p>}
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={!!openId} onOpenChange={(o) => !o && setOpenId(null)}>
             <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto border-0 bg-transparent p-0 shadow-none">
               <DialogTitle className="sr-only">Publicação</DialogTitle>
