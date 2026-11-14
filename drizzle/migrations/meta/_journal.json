@@ -50,6 +50,13 @@
       "when": 1794581009236,
       "tag": "0006_badges_mentions_frames_collab_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794616802287,
+      "tag": "0007_polls",
+      "breakpoints": true
     }
   ]
 }

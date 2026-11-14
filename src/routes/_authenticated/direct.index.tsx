@@ -6,7 +6,7 @@ import { AppShell } from "@/components/melan/AppShell";
 import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { useMe } from "@/lib/auth";
 
-export const Route = createFileRoute("/_authenticated/messages/")({
+export const Route = createFileRoute("/_authenticated/direct/")({
   head: () => ({ meta: [{ title: "Direct — Melan" }, { name: "description", content: "Suas conversas privadas no Melan." }] }),
   component: Inbox,
 });
@@ -31,7 +31,7 @@ function Inbox() {
       });
       const ids = [...seen.keys()];
       const { data: profs } = ids.length ? await supabase.from("profiles").select("id,username,display_name,avatar_url,is_verified").in("id", ids) : { data: [] };
-      return ids.map((id) => ({ last: seen.get(id)!, p: profs?.find((x) => x.id === id) }));
+      return ids.map((id) => ({ last: seen.get(id)!, p: profs?.find((x) => x.id === id) })).filter((x) => x.p);
     },
   });
   return (
@@ -40,14 +40,14 @@ function Inbox() {
       <div className="space-y-2 px-3">
         <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Nova conversa: buscar @usuário" className="h-11 w-full rounded-full bg-card px-4 text-sm outline-none" />
         {found.data?.map((p) => (
-          <Link key={p.id} to="/messages/$userId" params={{ userId: p.id }} className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
+          <Link key={p.id} to="/direct/$userId" params={{ userId: p.id }} className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
             <UserAvatar path={p.avatar_url} name={p.display_name} />
             <p className="font-semibold">{p.display_name} <span className="text-xs text-muted-foreground">@{p.username}</span></p>
           </Link>
         ))}
         {q.data?.length === 0 && <p className="py-10 text-center text-muted-foreground">Nenhuma conversa ainda. Busque alguém acima para começar.</p>}
         {q.data?.map(({ last, p }) => (
-          <Link key={p?.id ?? last.id} to="/messages/$userId" params={{ userId: p?.id ?? "" }} className="flex items-center gap-3 rounded-2xl bg-card p-3">
+          <Link key={p?.id ?? last.id} to="/direct/$userId" params={{ userId: p?.id ?? "" }} className="flex items-center gap-3 rounded-2xl bg-card p-3">
             <UserAvatar path={p?.avatar_url} name={p?.display_name} className="h-12 w-12" />
             <div className="min-w-0">
               <p className="font-semibold">{p?.display_name} <Verified show={p?.is_verified} /></p>

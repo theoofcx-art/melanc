@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Flame, ImagePlus, Link2, Music, Users, X } from "lucide-react";
+import { BarChart3, Flame, ImagePlus, Link2, Music, Users, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { useMe } from "@/lib/auth";
 import { Sticker, StickerPicker } from "@/components/melan/Stickers";
 import { uploadMedia } from "@/lib/media";
 import { extractHashtags, spotifyEmbedUrl } from "@/lib/hashtags";
+import { cleanPollOptions } from "@/lib/poll";
 import { BOOST_PRICE_PER_DAY, FILTERS, boostWhatsAppUrl } from "@/lib/feed";
 
 export const Route = createFileRoute("/_authenticated/create")({
@@ -30,12 +31,18 @@ function Create() {
   const [collabInput, setCollabInput] = useState("");
   const [showCollab, setShowCollab] = useState(false);
   const [sticker, setSticker] = useState<string | null>(null);
+  const [showPoll, setShowPoll] = useState(false);
+  const [pollOpts, setPollOpts] = useState<string[]>(["", ""]);
+  const [pollMulti, setPollMulti] = useState(false);
   const [busy, setBusy] = useState(false);
   const [boostFor, setBoostFor] = useState<string | null>(null);
   const [days, setDays] = useState(1);
 
   const publish = async () => {
     if (!user) return;
+    const opts = showPoll ? cleanPollOptions(pollOpts) : [];
+    if (showPoll && opts.length < 2) return toast.error("A enquete precisa de pelo menos 2 opções");
+    if (showPoll && !text.trim()) return toast.error("Escreva a pergunta da enquete");
     if (!text.trim() && files.length === 0 && !sticker) return toast.error("Escreva algo, adicione mídia ou uma figurinha");
     if (spotify && !spotifyEmbedUrl(spotify)) return toast.error("Link do Spotify inválido");
     let linkUrl: string | null = null;
@@ -61,7 +68,7 @@ function Create() {
         paths.push(await uploadMedia(user.id, f));
         types.push(f.type.startsWith("video") ? "video" : "image");
       }
-      const kind = files.length === 0 ? "text" : files.length > 1 ? "carousel" : types[0] ?? "image";
+      const kind = showPoll ? "poll" : files.length === 0 ? "text" : files.length > 1 ? "carousel" : types[0] ?? "image";
       const { data, error } = await supabase.from("posts").insert({
         author_id: user.id,
         kind,
@@ -73,8 +80,13 @@ function Create() {
         link_url: linkUrl,
         filter: filter === "none" ? null : filter,
         sticker,
+        poll_multi: showPoll && pollMulti,
       }).select("id").single();
       if (error) throw error;
+      if (showPoll) {
+        const { error: pe } = await supabase.from("poll_options").insert(opts.map((label, position) => ({ post_id: data.id, label, position })));
+        if (pe) throw pe;
+      }
       if (names.length) {
         const { error: ie } = await supabase.rpc("invite_collabs", { _post_id: data.id, _usernames: names });
         if (ie) toast.error(ie.message);
@@ -122,6 +134,19 @@ function Create() {
         {spotifyEmbedUrl(spotify) && <iframe title="Spotify" src={spotifyEmbedUrl(spotify)!} className="h-20 w-full rounded-xl" />}
         {showLink && <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Link do botão “Saiba mais” (ex: seusite.com)" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
         {showCollab && <input value={collabInput} onChange={(e) => setCollabInput(e.target.value)} placeholder="Colab: @usuario1 @usuario2 (até 5)" className="h-12 w-full rounded-2xl bg-card px-4 text-sm outline-none" />}
+        {showPoll && (
+          <div className="space-y-2 rounded-3xl bg-card p-4">
+            <p className="text-sm font-semibold">Enquete — a pergunta é o texto acima</p>
+            {pollOpts.map((o, i) => (
+              <div key={i} className="flex gap-2">
+                <input value={o} maxLength={80} onChange={(e) => setPollOpts(pollOpts.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`Opção ${i + 1}`} className="h-11 flex-1 rounded-2xl bg-secondary px-4 text-sm outline-none" />
+                {pollOpts.length > 2 && <button aria-label="Remover opção" onClick={() => setPollOpts(pollOpts.filter((_, j) => j !== i))} className="rounded-full bg-secondary p-3"><X className="h-3 w-3" /></button>}
+              </div>
+            ))}
+            {pollOpts.length < 6 && <button onClick={() => setPollOpts([...pollOpts, ""])} className="text-sm text-melon">+ Adicionar opção</button>}
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={pollMulti} onChange={(e) => setPollMulti(e.target.checked)} /> Permitir várias respostas</label>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <label className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm">
             <ImagePlus className="h-4 w-4" /> Fotos / vídeos
@@ -130,6 +155,7 @@ function Create() {
           <button onClick={() => setShowSpotify((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Music className="h-4 w-4" /> Spotify</button>
           <button onClick={() => setShowLink((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Link2 className="h-4 w-4" /> Link</button>
           <StickerPicker onPick={setSticker} />
+          <button onClick={() => setShowPoll((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><BarChart3 className="h-4 w-4" /> Enquete</button>
           <button onClick={() => setShowCollab((s) => !s)} className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm"><Users className="h-4 w-4" /> Colab</button>
         </div>
         <button disabled={busy} onClick={publish} className="h-12 w-full rounded-full bg-melon font-semibold text-primary-foreground disabled:opacity-50">{busy ? "Publicando…" : "Publicar"}</button>

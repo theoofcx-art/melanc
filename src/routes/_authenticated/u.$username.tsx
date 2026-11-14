@@ -118,7 +118,7 @@ function ProfilePage() {
               <Link to="/profile/edit" className="rounded-full bg-primary px-7 py-2.5 text-lg">Editar</Link>
             ) : (
               <div className="flex gap-2">
-                <Link to="/messages/$userId" params={{ userId: p.id }} aria-label="Mensagem" className="rounded-full bg-secondary p-3"><Send className="h-5 w-5" /></Link>
+                <Link to="/direct/$userId" params={{ userId: p.id }} aria-label="Mensagem" className="rounded-full bg-secondary p-3"><Send className="h-5 w-5" /></Link>
                 <button onClick={follow} className={`rounded-full px-6 py-2.5 ${s?.amFollowing ? "bg-secondary" : "bg-melon text-primary-foreground"}`}>{s?.amFollowing ? "Seguindo" : "Seguir"}</button>
               </div>
             )}

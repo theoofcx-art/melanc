@@ -8,7 +8,7 @@ import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { Sticker, StickerPicker } from "@/components/melan/Stickers";
 import { useMe } from "@/lib/auth";
 
-export const Route = createFileRoute("/_authenticated/messages/$userId")({
+export const Route = createFileRoute("/_authenticated/direct/$userId")({
   head: () => ({ meta: [{ title: "Conversa — Melan" }, { name: "description", content: "Conversa privada no Direct do Melan." }] }),
   component: Chat,
 });
@@ -50,10 +50,14 @@ function Chat() {
     qc.invalidateQueries({ queryKey: ["dm", userId] });
   };
 
+  if (other.isSuccess && !other.data) return (
+    <div className="mx-auto max-w-xl p-6 text-center"><p className="mb-4 text-muted-foreground">Essa conta não existe mais.</p><Link to="/direct" className="rounded-full bg-melon px-5 py-2.5 font-semibold text-primary-foreground">Voltar ao Direct</Link></div>
+  );
+
   return (
     <div className="mx-auto flex h-screen max-w-xl flex-col">
       <header className="flex items-center gap-3 bg-card px-4 py-3">
-        <Link to="/messages" aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Link>
+        <Link to="/direct" aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Link>
         <UserAvatar path={other.data?.avatar_url} name={other.data?.display_name} />
         <Link to="/u/$username" params={{ username: other.data?.username ?? "" }} className="font-semibold">{other.data?.display_name} <Verified show={other.data?.is_verified} /></Link>
       </header>

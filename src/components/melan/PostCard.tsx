@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/lib/auth";
 import { useMediaUrl } from "@/lib/media";
 import { spotifyEmbedUrl } from "@/lib/hashtags";
+import { Poll } from "@/components/melan/Poll";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { FILTERS, isBoosted } from "@/lib/feed";
 import { shareLink } from "@/lib/share";
@@ -361,6 +362,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
       <div className="space-y-3 px-4 py-3">
         {post.content && <Content text={post.content} />}
         {post.sticker && <Sticker value={post.sticker} className="h-32 w-32" saveable />}
+        {post.kind === "poll" && <Poll postId={post.id} />}
         {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">

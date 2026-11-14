@@ -48,7 +48,7 @@ export function AppShell({ children, hideHeader }: { children: ReactNode; hideHe
           <Link to="/feed" aria-label="Início"><MelanLogo /></Link>
           <div className="flex gap-2">
             <HeaderIcon to="/notifications" label="Notificações" badge={unread.data}><Bell className="h-5 w-5" /></HeaderIcon>
-            <HeaderIcon to="/messages" label="Direct"><Send className="h-5 w-5" /></HeaderIcon>
+            <HeaderIcon to="/direct" label="Direct"><Send className="h-5 w-5" /></HeaderIcon>
           </div>
         </header>
       )}

@@ -298,6 +298,78 @@ export type Database = {
           },
         ]
       }
+      poll_options: {
+        Row: {
+          id: string
+          label: string
+          position: number
+          post_id: string
+        }
+        Insert: {
+          id?: string
+          label: string
+          position?: number
+          post_id: string
+        }
+        Update: {
+          id?: string
+          label?: string
+          position?: number
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_options_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poll_votes: {
+        Row: {
+          created_at: string
+          option_id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          option_id: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          option_id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "poll_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_views: {
         Row: {
           created_at: string
@@ -345,6 +417,7 @@ export type Database = {
           link_url: string | null
           media_types: string[]
           media_urls: string[]
+          poll_multi: boolean
           spotify_url: string | null
           sticker: string | null
           view_count: number
@@ -362,6 +435,7 @@ export type Database = {
           link_url?: string | null
           media_types?: string[]
           media_urls?: string[]
+          poll_multi?: boolean
           spotify_url?: string | null
           sticker?: string | null
           view_count?: number
@@ -379,6 +453,7 @@ export type Database = {
           link_url?: string | null
           media_types?: string[]
           media_urls?: string[]
+          poll_multi?: boolean
           spotify_url?: string | null
           sticker?: string | null
           view_count?: number

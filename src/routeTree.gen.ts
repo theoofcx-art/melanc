@@ -17,14 +17,16 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCommunitiesRouteImport } from './routes/_authenticated/communities'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
 import { Route as AuthenticatedFeedRouteImport } from './routes/_authenticated/feed'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedWypRouteImport } from './routes/_authenticated/wyp'
 import { Route as ApiWypRouteImport } from './routes/api/wyp'
 import { Route as ApiWypImageRouteImport } from './routes/api/wyp-image'
 import { Route as ConviteUsernameRouteImport } from './routes/convite.$username'
-import { Route as AuthenticatedMessagesIndexRouteImport } from './routes/_authenticated/messages.index'
-import { Route as AuthenticatedMessagesUserIdRouteImport } from './routes/_authenticated/messages.$userId'
+import { Route as AuthenticatedDirectIndexRouteImport } from './routes/_authenticated/direct.index'
+import { Route as AuthenticatedDirectUserIdRouteImport } from './routes/_authenticated/direct.$userId'
+import { Route as AuthenticatedMessagesUserIdRouteImport } from './routes/_authenticated/messages_.$userId'
 import { Route as AuthenticatedPPostIdRouteImport } from './routes/_authenticated/p.$postId'
 import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
@@ -69,6 +71,11 @@ const AuthenticatedFeedRoute = AuthenticatedFeedRouteImport.update({
   path: '/feed',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
@@ -100,15 +107,21 @@ const ConviteUsernameRoute = ConviteUsernameRouteImport.update({
   path: '/convite/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedMessagesIndexRoute =
-  AuthenticatedMessagesIndexRouteImport.update({
-    id: '/messages/',
-    path: '/messages/',
+const AuthenticatedDirectIndexRoute =
+  AuthenticatedDirectIndexRouteImport.update({
+    id: '/direct/',
+    path: '/direct/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDirectUserIdRoute =
+  AuthenticatedDirectUserIdRouteImport.update({
+    id: '/direct/$userId',
+    path: '/direct/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMessagesUserIdRoute =
   AuthenticatedMessagesUserIdRouteImport.update({
-    id: '/messages/$userId',
+    id: '/messages_/$userId',
     path: '/messages/$userId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
@@ -137,17 +150,19 @@ export interface FileRoutesByFullPath {
   '/communities': typeof AuthenticatedCommunitiesRoute
   '/create': typeof AuthenticatedCreateRoute
   '/feed': typeof AuthenticatedFeedRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/wyp': typeof AuthenticatedWypRoute
   '/api/wyp': typeof ApiWypRoute
   '/api/wyp-image': typeof ApiWypImageRoute
   '/convite/$username': typeof ConviteUsernameRoute
+  '/direct/$userId': typeof AuthenticatedDirectUserIdRoute
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/p/$postId': typeof AuthenticatedPPostIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
-  '/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/direct/': typeof AuthenticatedDirectIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,17 +172,19 @@ export interface FileRoutesByTo {
   '/communities': typeof AuthenticatedCommunitiesRoute
   '/create': typeof AuthenticatedCreateRoute
   '/feed': typeof AuthenticatedFeedRoute
+  '/messages': typeof AuthenticatedMessagesRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/wyp': typeof AuthenticatedWypRoute
   '/api/wyp': typeof ApiWypRoute
   '/api/wyp-image': typeof ApiWypImageRoute
   '/convite/$username': typeof ConviteUsernameRoute
+  '/direct/$userId': typeof AuthenticatedDirectUserIdRoute
   '/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/p/$postId': typeof AuthenticatedPPostIdRoute
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
-  '/messages': typeof AuthenticatedMessagesIndexRoute
+  '/direct': typeof AuthenticatedDirectIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,17 +196,19 @@ export interface FileRoutesById {
   '/_authenticated/communities': typeof AuthenticatedCommunitiesRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/feed': typeof AuthenticatedFeedRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/wyp': typeof AuthenticatedWypRoute
   '/api/wyp': typeof ApiWypRoute
   '/api/wyp-image': typeof ApiWypImageRoute
   '/convite/$username': typeof ConviteUsernameRoute
-  '/_authenticated/messages/$userId': typeof AuthenticatedMessagesUserIdRoute
+  '/_authenticated/direct/$userId': typeof AuthenticatedDirectUserIdRoute
+  '/_authenticated/messages_/$userId': typeof AuthenticatedMessagesUserIdRoute
   '/_authenticated/p/$postId': typeof AuthenticatedPPostIdRoute
   '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
-  '/_authenticated/messages/': typeof AuthenticatedMessagesIndexRoute
+  '/_authenticated/direct/': typeof AuthenticatedDirectIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,17 +220,19 @@ export interface FileRouteTypes {
     | '/communities'
     | '/create'
     | '/feed'
+    | '/messages'
     | '/notifications'
     | '/search'
     | '/wyp'
     | '/api/wyp'
     | '/api/wyp-image'
     | '/convite/$username'
+    | '/direct/$userId'
     | '/messages/$userId'
     | '/p/$postId'
     | '/profile/edit'
     | '/u/$username'
-    | '/messages/'
+    | '/direct/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,17 +242,19 @@ export interface FileRouteTypes {
     | '/communities'
     | '/create'
     | '/feed'
+    | '/messages'
     | '/notifications'
     | '/search'
     | '/wyp'
     | '/api/wyp'
     | '/api/wyp-image'
     | '/convite/$username'
+    | '/direct/$userId'
     | '/messages/$userId'
     | '/p/$postId'
     | '/profile/edit'
     | '/u/$username'
-    | '/messages'
+    | '/direct'
   id:
     | '__root__'
     | '/'
@@ -242,17 +265,19 @@ export interface FileRouteTypes {
     | '/_authenticated/communities'
     | '/_authenticated/create'
     | '/_authenticated/feed'
+    | '/_authenticated/messages'
     | '/_authenticated/notifications'
     | '/_authenticated/search'
     | '/_authenticated/wyp'
     | '/api/wyp'
     | '/api/wyp-image'
     | '/convite/$username'
-    | '/_authenticated/messages/$userId'
+    | '/_authenticated/direct/$userId'
+    | '/_authenticated/messages_/$userId'
     | '/_authenticated/p/$postId'
     | '/_authenticated/profile/edit'
     | '/_authenticated/u/$username'
-    | '/_authenticated/messages/'
+    | '/_authenticated/direct/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -323,6 +348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFeedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notifications': {
       id: '/_authenticated/notifications'
       path: '/notifications'
@@ -365,15 +397,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConviteUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/messages/': {
-      id: '/_authenticated/messages/'
-      path: '/messages'
-      fullPath: '/messages/'
-      preLoaderRoute: typeof AuthenticatedMessagesIndexRouteImport
+    '/_authenticated/direct/': {
+      id: '/_authenticated/direct/'
+      path: '/direct'
+      fullPath: '/direct/'
+      preLoaderRoute: typeof AuthenticatedDirectIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/messages/$userId': {
-      id: '/_authenticated/messages/$userId'
+    '/_authenticated/direct/$userId': {
+      id: '/_authenticated/direct/$userId'
+      path: '/direct/$userId'
+      fullPath: '/direct/$userId'
+      preLoaderRoute: typeof AuthenticatedDirectUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages_/$userId': {
+      id: '/_authenticated/messages_/$userId'
       path: '/messages/$userId'
       fullPath: '/messages/$userId'
       preLoaderRoute: typeof AuthenticatedMessagesUserIdRouteImport
@@ -408,14 +447,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommunitiesRoute: typeof AuthenticatedCommunitiesRoute
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedFeedRoute: typeof AuthenticatedFeedRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedWypRoute: typeof AuthenticatedWypRoute
+  AuthenticatedDirectUserIdRoute: typeof AuthenticatedDirectUserIdRoute
   AuthenticatedMessagesUserIdRoute: typeof AuthenticatedMessagesUserIdRoute
   AuthenticatedPPostIdRoute: typeof AuthenticatedPPostIdRoute
   AuthenticatedProfileEditRoute: typeof AuthenticatedProfileEditRoute
   AuthenticatedUUsernameRoute: typeof AuthenticatedUUsernameRoute
-  AuthenticatedMessagesIndexRoute: typeof AuthenticatedMessagesIndexRoute
+  AuthenticatedDirectIndexRoute: typeof AuthenticatedDirectIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -423,14 +464,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommunitiesRoute: AuthenticatedCommunitiesRoute,
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedFeedRoute: AuthenticatedFeedRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedWypRoute: AuthenticatedWypRoute,
+  AuthenticatedDirectUserIdRoute: AuthenticatedDirectUserIdRoute,
   AuthenticatedMessagesUserIdRoute: AuthenticatedMessagesUserIdRoute,
   AuthenticatedPPostIdRoute: AuthenticatedPPostIdRoute,
   AuthenticatedProfileEditRoute: AuthenticatedProfileEditRoute,
   AuthenticatedUUsernameRoute: AuthenticatedUUsernameRoute,
-  AuthenticatedMessagesIndexRoute: AuthenticatedMessagesIndexRoute,
+  AuthenticatedDirectIndexRoute: AuthenticatedDirectIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
