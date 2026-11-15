@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BADGES, FRAMES, availableFrames, type BadgeKey, type FrameKey } from "@/lib/frames";
+import { BADGES, FRAMES, WINNER_COLORS, availableFrames, type BadgeKey, type FrameKey } from "@/lib/frames";
 import { shareLink } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ function Edit() {
     enabled: !!user,
     queryFn: async () => (await supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", user!.id)).count ?? 0,
   });
-  const can = availableFrames(owned.data ?? [], followers.data ?? 0);
+  const can = availableFrames(owned.data ?? [], followers.data ?? 0, !!profile?.is_mels_winner);
   const [refName, setRefName] = useState("");
   const [allFrames, setAllFrames] = useState(false);
   const claim = async () => {
@@ -53,6 +53,13 @@ function Edit() {
     if (error) return toast.error(error.message);
     qc.invalidateQueries();
     toast.success(key ? `Moldura ${FRAMES[key].label} aplicada` : "Moldura removida");
+  };
+
+  const setWinnerColor = async (col: "like_color" | "profile_bg", v: string | null) => {
+    if (!user) return;
+    const { error } = await supabase.from("profiles").update({ [col]: v }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries();
   };
 
   const setBadge = async (key: BadgeKey | null) => {
@@ -103,6 +110,30 @@ function Edit() {
           <Switch checked={f.is_private} onCheckedChange={(v) => setF({ ...f, is_private: v })} />
         </div>
         <button onClick={save} className="h-12 w-full rounded-full bg-melon font-semibold text-primary-foreground">Salvar</button>
+        {profile?.is_mels_winner && (
+          <section className="space-y-4 rounded-3xl bg-card p-4 aura-ring aura-vampiro">
+            <h2 className="font-display text-xl font-bold text-melon">🏆 Vencedor do Mels</h2>
+            {(["like_color", "profile_bg"] as const).map((col) => (
+              <div key={col} className="space-y-2">
+                <p className="text-sm">{col === "like_color" ? "Cor das suas curtidas" : "Cor do fundo do perfil"}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setWinnerColor(col, null)} className={`h-9 rounded-full bg-secondary px-3 text-xs ${!profile[col] ? "ring-2 ring-foreground" : ""}`}>Padrão</button>
+                  {WINNER_COLORS.map((c) => (
+                    <button key={c} aria-label={c} onClick={() => setWinnerColor(col, c)} style={{ backgroundColor: c }} className={`h-9 w-9 rounded-full ${profile[col] === c ? "ring-2 ring-foreground ring-offset-2 ring-offset-card" : ""}`} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="grid grid-cols-2 gap-3">
+              {(["mels_onda", "mels_dragao"] as FrameKey[]).map((k) => (
+                <button key={k} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile.frame === k ? "bg-primary" : "bg-secondary"}`}>
+                  <UserAvatar path={f.avatar_url} name={f.display_name} frame={k} className="h-14 w-14" />
+                  <span className="text-xs">{FRAMES[k].label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
         <section className="space-y-3 rounded-3xl bg-card p-4">
           <h2 className="font-display text-xl font-bold">Etiqueta</h2>
           <p className="text-xs text-muted-foreground">Aparece em cima da sua bio.</p>
@@ -121,7 +152,7 @@ function Edit() {
               <UserAvatar path={f.avatar_url} name={f.display_name} className="h-14 w-14" />
               <span className="text-xs">Sem moldura</span>
             </button>
-            {(Object.keys(FRAMES) as FrameKey[]).slice(0, allFrames ? undefined : 2).map((k) => {
+            {(Object.keys(FRAMES) as FrameKey[]).filter((k) => !FRAMES[k].winner).slice(0, allFrames ? undefined : 2).map((k) => {
               const ok = can.includes(k);
               return (
                 <button key={k} disabled={!ok} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile?.frame === k ? "bg-primary" : "bg-secondary"} ${ok ? "" : "opacity-50"}`}>

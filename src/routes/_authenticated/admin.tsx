@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, Flame, Frame, Trash2, UserX } from "lucide-react";
+import { BadgeCheck, Flame, Frame, Trash2, Trophy, UserX } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { useMe } from "@/lib/auth";
-import { adminBoostPost, adminDeleteUser, adminGiveFrame, adminSetVerified } from "@/lib/admin.functions";
+import { adminBoostPost, adminDeleteUser, adminGiveFrame, adminSetMelsWinner, adminSetVerified } from "@/lib/admin.functions";
 import { FRAMES, type FrameKey } from "@/lib/frames";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -27,6 +27,7 @@ function Admin() {
   const verify = useServerFn(adminSetVerified);
   const boost = useServerFn(adminBoostPost);
   const giveFrame = useServerFn(adminGiveFrame);
+  const setWinner = useServerFn(adminSetMelsWinner);
   const roleCheck = useQuery({
     queryKey: ["is-admin-strict", user?.id],
     enabled: !!user,
@@ -69,6 +70,7 @@ function Admin() {
             <UserAvatar path={u.avatar_url} name={u.display_name} />
             <div className="min-w-0 flex-1"><p className="truncate font-semibold">{u.display_name} <Verified show={u.is_verified} /></p><p className="text-xs text-muted-foreground">@{u.username}</p></div>
             <button aria-label="Verificar" onClick={() => run(() => verify({ data: { userId: u.id, verified: !u.is_verified } }), u.is_verified ? "Selo removido" : "Selo concedido")} className={`rounded-full p-2 ${u.is_verified ? "bg-verified" : "bg-secondary"}`}><BadgeCheck className="h-4 w-4" /></button>
+            <button aria-label="Vencedor do Mels" onClick={() => run(() => setWinner({ data: { userId: u.id, winner: !u.is_mels_winner } }), u.is_mels_winner ? "Vencedor removido" : "Agora é Vencedor do Mels 🏆")} className={`rounded-full p-2 ${u.is_mels_winner ? "bg-melon text-primary-foreground" : "bg-secondary"}`}><Trophy className="h-4 w-4" /></button>
             <button aria-label="Molduras" onClick={() => setFrameFor(u)} className="rounded-full bg-secondary p-2"><Frame className="h-4 w-4" /></button>
             {u.id !== user?.id && (
               <button aria-label="Banir" onClick={() => confirm(`Banir e excluir @${u.username} permanentemente?`) && run(() => del({ data: { userId: u.id } }), "Conta excluída")} className="rounded-full bg-destructive p-2"><UserX className="h-4 w-4" /></button>
@@ -87,7 +89,7 @@ function Admin() {
           <DialogTitle>Molduras de @{frameFor?.username}</DialogTitle>
           <p className="text-xs text-muted-foreground">Toque para dar ou tirar.</p>
           <div className="grid grid-cols-3 gap-3">
-            {(Object.keys(FRAMES) as FrameKey[]).map((k) => {
+            {(Object.keys(FRAMES) as FrameKey[]).filter((k) => !FRAMES[k].winner).map((k) => {
               const has = frames.data?.some((r) => r.user_id === frameFor?.id && r.frame === k);
               return (
                 <button key={k} onClick={() => frameFor && run(() => giveFrame({ data: { userId: frameFor.id, frame: k, give: !has } }), has ? "Moldura retirada" : "Moldura dada")} className={`flex flex-col items-center gap-1 rounded-2xl p-2 ${has ? "bg-melon text-primary-foreground" : "bg-secondary"}`}>

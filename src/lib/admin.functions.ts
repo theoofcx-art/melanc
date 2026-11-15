@@ -54,3 +54,13 @@ export const adminGiveFrame = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminSetMelsWinner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid(), winner: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { error } = await context.supabase.from("profiles").update({ is_mels_winner: data.winner }).eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

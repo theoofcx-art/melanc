@@ -80,7 +80,7 @@ function ProfilePage() {
 
   return (
     <AppShell hideHeader>
-      <div className="relative">
+      <div className="relative min-h-screen" style={p.is_mels_winner && p.profile_bg ? { background: `linear-gradient(180deg, transparent 0, ${p.profile_bg} 26rem)` } : undefined}>
         <div className="absolute inset-0 h-[26rem] overflow-hidden">
           {banner ? <img src={banner} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-primary" />}
           <div className="banner-fade absolute inset-0" />
@@ -103,6 +103,7 @@ function ProfilePage() {
               </div>
             </div>
           </div>
+          {p.is_mels_winner && <p className="mt-4 font-display text-sm font-bold uppercase tracking-wide text-melon">🏆 Vencedor do Mels</p>}
           {p.badge && p.badge in BADGES && (
             <span className={`${BADGES[p.badge as BadgeKey].aura} aura-ring mt-4 inline-flex items-center gap-2 rounded-full bg-card px-3 py-1 text-sm`}>
               <span className="text-lg">{BADGES[p.badge as BadgeKey].emoji}</span>{BADGES[p.badge as BadgeKey].label}

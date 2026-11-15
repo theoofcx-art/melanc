@@ -139,7 +139,7 @@ type CommentRow = {
 };
 
 function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: string }) {
-  const { user, isAdmin } = useMe();
+  const { user, isAdmin, profile } = useMe();
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [replyTo, setReplyTo] = useState<CommentRow | null>(null);
@@ -202,7 +202,7 @@ function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: stri
           </div>
         </div>
         <button aria-label="Curtir comentário" onClick={() => like(c)} className="flex flex-col items-center text-[10px] text-muted-foreground">
-          <Heart className={`h-4 w-4 ${liked ? "fill-melon text-melon" : ""}`} />{c.comment_likes.length || ""}
+          <Heart style={liked && profile?.like_color ? { color: profile.like_color, fill: profile.like_color } : undefined} className={`h-4 w-4 ${liked ? "fill-melon text-melon" : ""}`} />{c.comment_likes.length || ""}
         </button>
       </div>
     );
@@ -255,7 +255,7 @@ function Reposters({ list }: { list: NonNullable<FeedPost["reposts"]> }) {
 }
 
 export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?: boolean }) {
-  const { user, isAdmin } = useMe();
+  const { user, isAdmin, profile } = useMe();
   const qc = useQueryClient();
   const [showComments, setShowComments] = useState(false);
   const liked = !!user && post.likes.some((l) => l.user_id === user.id);
@@ -366,7 +366,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
         {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">
-            <Heart className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
+            <Heart style={isLiked && profile?.like_color ? { color: profile.like_color, fill: profile.like_color } : undefined} className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
           </button>
           <button onClick={() => setShowComments((s) => !s)} className="flex items-center gap-1.5" aria-label="Comentários">
             <MessageCircle className="h-6 w-6" /> <span className="text-sm">{post.comments[0]?.count ?? 0}</span>

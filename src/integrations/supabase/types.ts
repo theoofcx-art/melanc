@@ -479,9 +479,12 @@ export type Database = {
           frame: string | null
           id: string
           interests: string[]
+          is_mels_winner: boolean
           is_private: boolean
           is_verified: boolean
+          like_color: string | null
           link: string | null
+          profile_bg: string | null
           pronouns: string | null
           username: string
         }
@@ -495,9 +498,12 @@ export type Database = {
           frame?: string | null
           id: string
           interests?: string[]
+          is_mels_winner?: boolean
           is_private?: boolean
           is_verified?: boolean
+          like_color?: string | null
           link?: string | null
+          profile_bg?: string | null
           pronouns?: string | null
           username: string
         }
@@ -511,9 +517,12 @@ export type Database = {
           frame?: string | null
           id?: string
           interests?: string[]
+          is_mels_winner?: boolean
           is_private?: boolean
           is_verified?: boolean
+          like_color?: string | null
           link?: string | null
+          profile_bg?: string | null
           pronouns?: string | null
           username?: string
         }
