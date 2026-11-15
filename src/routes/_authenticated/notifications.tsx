@@ -54,7 +54,7 @@ function Notifs() {
             </div>
           </div>
         ))}
-        {q.data?.map((n) => (
+        {q.data?.filter((n) => n.actor?.username).map((n) => (
           <Link key={n.id} to="/u/$username" params={{ username: n.actor?.username ?? "" }} className={`flex items-center gap-3 rounded-2xl p-3 ${n.read ? "bg-card/60" : "bg-card"}`}>
             <UserAvatar path={n.actor?.avatar_url} name={n.actor?.display_name} />
             <p className="flex-1 text-sm"><b>@{n.actor?.username}</b> {label[n.kind] ?? n.kind}</p>

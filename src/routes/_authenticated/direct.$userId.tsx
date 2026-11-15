@@ -59,7 +59,7 @@ function Chat() {
       <header className="flex items-center gap-3 bg-card px-4 py-3">
         <Link to="/direct" aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Link>
         <UserAvatar path={other.data?.avatar_url} name={other.data?.display_name} />
-        <Link to="/u/$username" params={{ username: other.data?.username ?? "" }} className="font-semibold">{other.data?.display_name} <Verified show={other.data?.is_verified} /></Link>
+        {other.data && <Link to="/u/$username" params={{ username: other.data.username }} className="font-semibold">{other.data.display_name} <Verified show={other.data.is_verified} /></Link>}
       </header>
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {msgs.data?.map((m) => {
