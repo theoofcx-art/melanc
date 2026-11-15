@@ -40,7 +40,10 @@ function Chat() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [qc, userId]);
-  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [msgs.data?.length]);
+  useEffect(() => {
+    // Do not return the browser call: React treats effect return values as cleanup functions.
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs.data?.length]);
 
   const send = async (sticker?: string) => {
     if (!user || (!text.trim() && !sticker)) return;

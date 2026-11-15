@@ -47,7 +47,10 @@ function Wyp() {
   const [busy, setBusy] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [msgs]);
+  useEffect(() => {
+    // Browser extensions may wrap this call and return a non-function value.
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs]);
 
   const patchLast = (fn: (m: Msg) => Msg) => setMsgs((all) => [...all.slice(0, -1), fn(all[all.length - 1])]);
 
