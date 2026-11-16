@@ -33,7 +33,7 @@ export type FeedPost = {
   collaborators?: string[];
   boosted_until?: string | null;
   created_at: string;
-  author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean; frame?: string | null } | null;
+  author: { username: string; display_name: string; avatar_url: string | null; is_verified: boolean; frame?: string | null; like_color?: string | null } | null;
   post_views?: { count: number }[];
   view_count?: number;
   likes: { user_id: string }[];
@@ -42,7 +42,7 @@ export type FeedPost = {
 };
 
 export const POST_SELECT =
-  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame), likes(user_id), reposts(user_id, user:profiles!reposts_user_id_fkey(username,display_name,avatar_url)), comments(count)";
+  "*, author:profiles!posts_author_id_fkey(username,display_name,avatar_url,is_verified,frame,like_color), likes(user_id), reposts(user_id, user:profiles!reposts_user_id_fkey(username,display_name,avatar_url)), comments(count)";
 
 function Media({ path, type, vertical, filter }: { path: string; type: string; vertical: boolean; filter?: string | null }) {
   const url = useMediaUrl(path);
@@ -138,7 +138,7 @@ type CommentRow = {
   comment_likes: { user_id: string }[];
 };
 
-function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: string }) {
+function Comments({ postId, postAuthorId, likeColor }: { postId: string; postAuthorId: string; likeColor?: string | null }) {
   const { user, isAdmin, profile } = useMe();
   const qc = useQueryClient();
   const [text, setText] = useState("");
@@ -202,7 +202,7 @@ function Comments({ postId, postAuthorId }: { postId: string; postAuthorId: stri
           </div>
         </div>
         <button aria-label="Curtir comentário" onClick={() => like(c)} className="flex flex-col items-center text-[10px] text-muted-foreground">
-          <Heart style={liked && profile?.like_color ? { color: profile.like_color, fill: profile.like_color } : undefined} className={`h-4 w-4 ${liked ? "fill-melon text-melon" : ""}`} />{c.comment_likes.length || ""}
+          <Heart style={liked && likeColor ? { color: likeColor, fill: likeColor } : undefined} className={`h-4 w-4 ${liked ? "fill-melon text-melon" : ""}`} />{c.comment_likes.length || ""}
         </button>
       </div>
     );
@@ -254,10 +254,10 @@ function Reposters({ list }: { list: NonNullable<FeedPost["reposts"]> }) {
   );
 }
 
-export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?: boolean }) {
+export function PostCard({ post, vertical = false, openComments = false }: { post: FeedPost; vertical?: boolean; openComments?: boolean }) {
   const { user, isAdmin, profile } = useMe();
   const qc = useQueryClient();
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(openComments);
   const liked = !!user && post.likes.some((l) => l.user_id === user.id);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
   const isLiked = optimistic ?? liked;
@@ -366,7 +366,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
         {embed && <AutoSpotify url={embed.replace(/^https:\/\/open\.spotify\.com\/embed\/(\w+)\/([A-Za-z0-9]+).*$/, "spotify:$1:$2")} />}
         <div className="flex items-center gap-5 text-muted-foreground">
           <button onClick={toggleLike} className="flex items-center gap-1.5" aria-label="Curtir">
-            <Heart style={isLiked && profile?.like_color ? { color: profile.like_color, fill: profile.like_color } : undefined} className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
+            <Heart style={isLiked && post.author?.like_color ? { color: post.author.like_color, fill: post.author.like_color } : undefined} className={`h-6 w-6 transition ${isLiked ? "fill-melon text-melon" : ""}`} /> <span className="text-sm">{likeCount}</span>
           </button>
           <button onClick={() => setShowComments((s) => !s)} className="flex items-center gap-1.5" aria-label="Comentários">
             <MessageCircle className="h-6 w-6" /> <span className="text-sm">{post.comments[0]?.count ?? 0}</span>
@@ -380,7 +380,7 @@ export function PostCard({ post, vertical = false }: { post: FeedPost; vertical?
           <span className="ml-auto flex items-center gap-1.5 text-sm" aria-label="Visualizações"><Eye className="h-5 w-5" />{post.view_count ?? 0}</span>
         </div>
       </div>
-      {showComments && <Comments postId={post.id} postAuthorId={post.author_id} />}
+      {showComments && <Comments postId={post.id} postAuthorId={post.author_id} likeColor={post.author?.like_color} />}
     </article>
   );
 }

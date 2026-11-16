@@ -55,7 +55,7 @@ function Notifs() {
           </div>
         ))}
         {q.data?.filter((n) => n.actor?.username).map((n) => (
-          <Link key={n.id} to="/u/$username" params={{ username: n.actor?.username ?? "" }} className={`flex items-center gap-3 rounded-2xl p-3 ${n.read ? "bg-card/60" : "bg-card"}`}>
+          <Link key={n.id} {...(n.post_id ? { to: "/p/$postId" as const, params: { postId: n.post_id }, search: { c: ["comment", "mention"].includes(n.kind) ? 1 : undefined } } : { to: "/u/$username" as const, params: { username: n.actor?.username ?? "" } })} className={`flex items-center gap-3 rounded-2xl p-3 ${n.read ? "bg-card/60" : "bg-card"}`}>
             <UserAvatar path={n.actor?.avatar_url} name={n.actor?.display_name} />
             <p className="flex-1 text-sm"><b>@{n.actor?.username}</b> {label[n.kind] ?? n.kind}</p>
             <span className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(n.created_at), { locale: ptBR })}</span>

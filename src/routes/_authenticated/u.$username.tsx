@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Plus, Image as ImageIcon, Film, AlignLeft, Lock, LogOut, Send, Share2 } from "lucide-react";
+import { Link2, Plus, Image as ImageIcon, Film, AlignLeft, Lock, LogOut, Send, Share2, BarChart3 } from "lucide-react";
 import { shareLink } from "@/lib/share";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/melan/AppShell";
 import { UserAvatar, Verified } from "@/components/melan/Avatar";
@@ -33,7 +33,7 @@ function ProfilePage() {
   const { user, profile: me } = useMe();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"media" | "video" | "text">("media");
+  const [tab, setTab] = useState<"media" | "video" | "text" | "poll">("media");
   const [openId, setOpenId] = useState<string | null>(null);
   const [list, setList] = useState<"followers" | "following" | null>(null);
   const uname = username === "me" ? me?.username : username;
@@ -76,11 +76,11 @@ function ProfilePage() {
     else await supabase.from("follows").insert({ follower_id: user.id, following_id: p.id });
     qc.invalidateQueries({ queryKey: ["profile-stats", p.id] });
   };
-  const shown = (s?.posts ?? []).filter((x) => (tab === "text" ? x.kind === "text" : tab === "video" ? x.media_types.includes("video") : x.media_urls.length > 0 && !x.media_types.every((t) => t === "video")));
+  const shown = (s?.posts ?? []).filter((x) => (tab === "text" ? x.kind === "text" : tab === "poll" ? x.kind === "poll" : tab === "video" ? x.media_types.includes("video") : x.media_urls.length > 0 && !x.media_types.every((t) => t === "video")));
 
   return (
     <AppShell hideHeader>
-      <div className="relative min-h-screen" style={p.is_mels_winner && p.profile_bg ? { background: `linear-gradient(180deg, transparent 0, ${p.profile_bg} 26rem)` } : undefined}>
+      <div className="relative min-h-screen" style={p.is_mels_winner && p.profile_bg ? ({ "--background": `color-mix(in oklab, ${p.profile_bg} 45%, oklch(0.2 0.02 190))`, "--card": `color-mix(in oklab, ${p.profile_bg} 35%, oklch(0.3 0.03 190))`, "--secondary": `color-mix(in oklab, ${p.profile_bg} 30%, oklch(0.35 0.03 190))`, "--primary": `color-mix(in oklab, ${p.profile_bg} 60%, oklch(0.4 0.05 190))`, backgroundColor: "var(--background)" } as CSSProperties) : undefined}>
         <div className="absolute inset-0 h-[26rem] overflow-hidden">
           {banner ? <img src={banner} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-primary" />}
           <div className="banner-fade absolute inset-0" />
@@ -149,11 +149,11 @@ function ProfilePage() {
       ) : (
         <>
           <div className="mt-6 flex justify-center gap-3 px-4">
-            {([["media", ImageIcon], ["video", Film], ["text", AlignLeft]] as const).map(([k, I]) => (
+            {([["media", ImageIcon], ["video", Film], ["text", AlignLeft], ["poll", BarChart3]] as const).map(([k, I]) => (
               <button key={k} aria-label={k} onClick={() => setTab(k)} className={`flex h-14 flex-1 items-center justify-center rounded-full ${tab === k ? "bg-primary" : "bg-secondary"}`}><I className="h-6 w-6" /></button>
             ))}
           </div>
-          {tab === "text" ? (
+          {tab === "text" || tab === "poll" ? (
             <div className="mt-3 space-y-3 px-3">{shown.map((x) => <PostCard key={x.id} post={x} />)}</div>
           ) : (
             <div className="mt-3 grid grid-cols-3 gap-1 px-1">{shown.map((x) => <Thumb key={x.id} post={x} onOpen={() => setOpenId(x.id)} />)}</div>

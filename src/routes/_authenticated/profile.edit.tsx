@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BADGES, FRAMES, WINNER_COLORS, availableFrames, type BadgeKey, type FrameKey } from "@/lib/frames";
+import { BADGES, FRAMES, FRAME_GROUPS, WINNER_COLORS, availableFrames, type BadgeKey, type FrameKey } from "@/lib/frames";
 import { shareLink } from "@/lib/share";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +37,12 @@ function Edit() {
     enabled: !!user,
     queryFn: async () => (await supabase.from("follows").select("follower_id", { count: "exact", head: true }).eq("following_id", user!.id)).count ?? 0,
   });
-  const can = availableFrames(owned.data ?? [], followers.data ?? 0, !!profile?.is_mels_winner);
+  const maxViews = useQuery({
+    queryKey: ["max-views", user?.id],
+    enabled: !!user,
+    queryFn: async () => (await supabase.from("posts").select("view_count").eq("author_id", user!.id).order("view_count", { ascending: false }).limit(1)).data?.[0]?.view_count ?? 0,
+  });
+  const can = availableFrames(owned.data ?? [], followers.data ?? 0, !!profile?.is_mels_winner, maxViews.data ?? 0);
   const [refName, setRefName] = useState("");
   const [allFrames, setAllFrames] = useState(false);
   const claim = async () => {
@@ -152,17 +157,28 @@ function Edit() {
               <UserAvatar path={f.avatar_url} name={f.display_name} className="h-14 w-14" />
               <span className="text-xs">Sem moldura</span>
             </button>
-            {(Object.keys(FRAMES) as FrameKey[]).filter((k) => !FRAMES[k].winner).slice(0, allFrames ? undefined : 2).map((k) => {
-              const ok = can.includes(k);
-              return (
-                <button key={k} disabled={!ok} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile?.frame === k ? "bg-primary" : "bg-secondary"} ${ok ? "" : "opacity-50"}`}>
-                  <UserAvatar path={f.avatar_url} name={f.display_name} frame={k} className="h-14 w-14" />
-                  <span className="text-xs">{FRAMES[k].label}</span>
-                  <span className="text-[10px] text-muted-foreground">{ok ? (FRAMES[k].free ? "Grátis" : "Desbloqueada") : "🔒 " + FRAMES[k].how}</span>
-                </button>
-              );
-            })}
           </div>
+          {(() => { let shownCount = 0; return FRAME_GROUPS.map((g) => {
+            const keys = (Object.keys(FRAMES) as FrameKey[]).filter((k) => FRAMES[k].group === g.key).filter(() => allFrames || shownCount++ < 3);
+            if (!keys.length) return null;
+            return (
+              <div key={g.key} className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">{g.label}</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {keys.map((k) => {
+                    const ok = can.includes(k);
+                    return (
+                      <button key={k} disabled={!ok} onClick={() => wear(k)} className={`flex flex-col items-center gap-2 rounded-2xl p-3 ${profile?.frame === k ? "bg-primary" : "bg-secondary"} ${ok ? "" : "opacity-50"}`}>
+                        <UserAvatar path={f.avatar_url} name={f.display_name} frame={k} className="h-14 w-14" />
+                        <span className="text-xs">{FRAMES[k].label}</span>
+                        <span className="text-[10px] text-muted-foreground">{ok ? (FRAMES[k].free ? "Grátis" : "Desbloqueada") : "🔒 " + FRAMES[k].how}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }); })()}
           <button onClick={() => setAllFrames((v) => !v)} className="h-10 w-full rounded-full bg-secondary text-sm">{allFrames ? "Ver menos" : "Ver mais"}</button>
           <button onClick={() => profile && shareLink(`/convite/${profile.username}`, "Entre na Melan comigo 🍉")} className="h-11 w-full rounded-full bg-melon text-sm font-semibold text-primary-foreground">Convidar amigo e ganhar a moldura Arco-íris</button>
           <p className="text-center text-xs text-muted-foreground">Quando alguém criar conta pelo seu link, vocês dois ganham a moldura.</p>
