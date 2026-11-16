@@ -57,7 +57,7 @@ function Edit() {
 
   const setWinnerColor = async (col: "like_color" | "profile_bg", v: string | null) => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ [col]: v }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update(col === "like_color" ? { like_color: v } : { profile_bg: v }).eq("id", user.id);
     if (error) return toast.error(error.message);
     qc.invalidateQueries();
   };
