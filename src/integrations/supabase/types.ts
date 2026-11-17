@@ -773,6 +773,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_comment: { Args: { _comment: string }; Returns: boolean }
+      can_view_post: { Args: { _post: string }; Returns: boolean }
+      can_view_user: { Args: { _owner: string }; Returns: boolean }
       claim_referral: { Args: { _ref: string }; Returns: boolean }
       has_role: {
         Args: {

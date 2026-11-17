@@ -3,7 +3,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { MelanLogo } from "@/components/melan/Logo";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
@@ -92,11 +91,6 @@ function AuthPage() {
     setForgot(false);
   };
 
-  const google = async () => {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) toast.error("Não foi possível entrar com Google");
-  };
-
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-6 py-10">
       <div className="text-center"><MelanLogo size="lg" /></div>
@@ -149,8 +143,6 @@ function AuthPage() {
             {mode === "signup" ? "Criar conta" : "Entrar"}
           </button>
           {mode === "signin" && <button onClick={() => setForgot(true)} className="w-full text-sm text-muted-foreground">Esqueci a senha</button>}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground"><div className="h-px flex-1 bg-border" />ou<div className="h-px flex-1 bg-border" /></div>
-          <button onClick={google} className="h-12 w-full rounded-full bg-secondary font-medium">Continuar com Google</button>
         </div>
       )}
     </div>
