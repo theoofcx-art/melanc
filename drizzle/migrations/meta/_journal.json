@@ -71,6 +71,20 @@
       "when": 1794790297763,
       "tag": "0009_frames_v3",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794875713927,
+      "tag": "0010_scope_social_reads_by_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794875811178,
+      "tag": "0011_restore_profiles_read_policy",
+      "breakpoints": true
     }
   ]
 }
