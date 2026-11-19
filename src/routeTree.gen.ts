@@ -30,6 +30,7 @@ import { Route as AuthenticatedMessagesUserIdRouteImport } from './routes/_authe
 import { Route as AuthenticatedPPostIdRouteImport } from './routes/_authenticated/p.$postId'
 import { Route as AuthenticatedProfileEditRouteImport } from './routes/_authenticated/profile.edit'
 import { Route as AuthenticatedUUsernameRouteImport } from './routes/_authenticated/u.$username'
+import { Route as ApiPublicJobsCleanupRouteImport } from './routes/api/public/jobs/cleanup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -141,6 +142,11 @@ const AuthenticatedUUsernameRoute = AuthenticatedUUsernameRouteImport.update({
   path: '/u/$username',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicJobsCleanupRoute = ApiPublicJobsCleanupRouteImport.update({
+  id: '/api/public/jobs/cleanup',
+  path: '/api/public/jobs/cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/direct/': typeof AuthenticatedDirectIndexRoute
+  '/api/public/jobs/cleanup': typeof ApiPublicJobsCleanupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/profile/edit': typeof AuthenticatedProfileEditRoute
   '/u/$username': typeof AuthenticatedUUsernameRoute
   '/direct': typeof AuthenticatedDirectIndexRoute
+  '/api/public/jobs/cleanup': typeof ApiPublicJobsCleanupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/profile/edit': typeof AuthenticatedProfileEditRoute
   '/_authenticated/u/$username': typeof AuthenticatedUUsernameRoute
   '/_authenticated/direct/': typeof AuthenticatedDirectIndexRoute
+  '/api/public/jobs/cleanup': typeof ApiPublicJobsCleanupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/u/$username'
     | '/direct/'
+    | '/api/public/jobs/cleanup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/profile/edit'
     | '/u/$username'
     | '/direct'
+    | '/api/public/jobs/cleanup'
   id:
     | '__root__'
     | '/'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profile/edit'
     | '/_authenticated/u/$username'
     | '/_authenticated/direct/'
+    | '/api/public/jobs/cleanup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   ApiWypRoute: typeof ApiWypRoute
   ApiWypImageRoute: typeof ApiWypImageRoute
   ConviteUsernameRoute: typeof ConviteUsernameRoute
+  ApiPublicJobsCleanupRoute: typeof ApiPublicJobsCleanupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -439,6 +452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUUsernameRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/jobs/cleanup': {
+      id: '/api/public/jobs/cleanup'
+      path: '/api/public/jobs/cleanup'
+      fullPath: '/api/public/jobs/cleanup'
+      preLoaderRoute: typeof ApiPublicJobsCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWypRoute: ApiWypRoute,
   ApiWypImageRoute: ApiWypImageRoute,
   ConviteUsernameRoute: ConviteUsernameRoute,
+  ApiPublicJobsCleanupRoute: ApiPublicJobsCleanupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

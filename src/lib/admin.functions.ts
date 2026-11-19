@@ -75,3 +75,21 @@ export const adminSetPassword = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const adminStorageReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { storageReport } = await import("@/lib/cleanup.server");
+    return storageReport(supabaseAdmin);
+  });
+
+export const adminRunCleanup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { runCleanup } = await import("@/lib/cleanup.server");
+    return runCleanup(supabaseAdmin);
+  });

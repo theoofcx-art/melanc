@@ -11,6 +11,7 @@ import { UserAvatar, Verified } from "@/components/melan/Avatar";
 import { useMe } from "@/lib/auth";
 import { adminBoostPost, adminDeleteUser, adminGiveFrame, adminSetMelsWinner, adminSetPassword, adminSetVerified } from "@/lib/admin.functions";
 import { FRAMES, type FrameKey } from "@/lib/frames";
+import { StoragePanel } from "@/components/melan/StoragePanel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Melan" }, { name: "robots", content: "noindex" }] }),
@@ -61,6 +62,7 @@ function Admin() {
     <AppShell>
       <div className="space-y-3 px-4">
         <h1 className="font-display text-2xl font-bold text-melon">Painel administrativo</h1>
+        <StoragePanel />
         <div className="grid grid-cols-2 rounded-full bg-secondary p-1 text-sm">
           <button onClick={() => setTab("users")} className={`rounded-full py-2 ${tab === "users" ? "bg-primary" : ""}`}>Contas ({users.data?.length ?? 0})</button>
           <button onClick={() => setTab("posts")} className={`rounded-full py-2 ${tab === "posts" ? "bg-primary" : ""}`}>Publicações</button>
